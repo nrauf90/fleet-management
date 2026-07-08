@@ -1,0 +1,33 @@
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2026-01-18 03:22:16 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 03:22:16 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:46 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:47 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:49 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:49 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:49 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: admin/Phpinfophp/index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:50 --> 404 Page Not Found: admin/Phpinfo/index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index
+ERROR - 2026-01-18 16:07:51 --> 404 Page Not Found: /index

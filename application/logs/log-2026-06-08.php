@@ -1,0 +1,111 @@
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2026-06-08 06:20:08 --> 404 Page Not Found: /index
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2026-06-08 06:20:08 --> 404 Page Not Found: /index
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2026-06-08 06:20:08 --> 404 Page Not Found: /index
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2026-06-08 06:20:08 --> 404 Page Not Found: /index
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2026-06-08 06:20:08 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 11:55:40 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:01 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:02 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:03 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 13:05:04 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:11 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:13 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:13 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:14 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:18 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:20 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:22 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:24 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:26:32 --> 404 Page Not Found: /index
+ERROR - 2026-06-08 15:29:12 --> 404 Page Not Found: /index

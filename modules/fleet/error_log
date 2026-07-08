@@ -1,0 +1,4 @@
+[03-Mar-2025 17:34:37 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function get_instance() in /home2/mnritsol/fms.mnr-itsolutions.com/modules/fleet/install.php:3
+Stack trace:
+#0 {main}
+  thrown in /home2/mnritsol/fms.mnr-itsolutions.com/modules/fleet/install.php on line 3

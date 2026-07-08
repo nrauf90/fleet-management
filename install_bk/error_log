@@ -1,0 +1,24 @@
+[02-Mar-2025 19:35:49 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'mnritsol_fms'@'localhost' (using password: YES) in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php:46
+Stack trace:
+#0 /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php(46): mysqli->__construct()
+#1 /home2/mnritsol/fms.mnr-itsolutions.com/install/index.php(13): Install->go()
+#2 {main}
+  thrown in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php on line 46
+[02-Mar-2025 19:43:30 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'mnritsol_fms'@'localhost' (using password: YES) in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php:46
+Stack trace:
+#0 /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php(46): mysqli->__construct()
+#1 /home2/mnritsol/fms.mnr-itsolutions.com/install/index.php(13): Install->go()
+#2 {main}
+  thrown in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php on line 46
+[02-Mar-2025 19:44:36 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'mnritsol_fms'@'localhost' (using password: YES) in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php:46
+Stack trace:
+#0 /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php(46): mysqli->__construct()
+#1 /home2/mnritsol/fms.mnr-itsolutions.com/install/index.php(13): Install->go()
+#2 {main}
+  thrown in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php on line 46
+[02-Mar-2025 19:49:21 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'mnritsol_fms'@'localhost' (using password: YES) in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php:46
+Stack trace:
+#0 /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php(46): mysqli->__construct()
+#1 /home2/mnritsol/fms.mnr-itsolutions.com/install/index.php(13): Install->go()
+#2 {main}
+  thrown in /home2/mnritsol/fms.mnr-itsolutions.com/install/install.class.php on line 46
