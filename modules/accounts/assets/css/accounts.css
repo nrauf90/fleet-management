@@ -1,0 +1,44 @@
+.accounts-stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 15px;
+    min-height: 110px;
+}
+
+.accounts-stat-label {
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.accounts-stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.accounts-stat-balance {
+    border-left: 4px solid #2563eb;
+}
+
+.accounts-stat-credit {
+    border-left: 4px solid #16a34a;
+}
+
+.accounts-stat-debit {
+    border-left: 4px solid #dc2626;
+}
+
+#account-transaction-modal .edit-title {
+    display: none;
+}
+
+#account-transaction-modal.edit-mode .edit-title {
+    display: inline;
+}
+
+#account-transaction-modal.edit-mode .add-title {
+    display: none;
+}
