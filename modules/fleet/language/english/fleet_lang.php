@@ -888,6 +888,7 @@ $lang['delivery_note_total_packages'] = 'TOTAL NUMBER OF PACKAGES:';
 $lang['delivery_note_add_row'] = 'Add Row';
 $lang['print_delivery_note'] = 'Print Delivery Note';
 $lang['delivery_note_supplier'] = 'SUPPLIER:';
+$lang['delivery_note_customer'] = 'CUSTOMER:';
 $lang['delivery_note_contact_person'] = 'CONTACT PERSON:';
 $lang['delivery_note_invoice_no'] = 'INVOICE NO:';
 $lang['delivery_note_no_of_trucks'] = 'NO. OF TRUCKS:';

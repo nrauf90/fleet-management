@@ -3363,6 +3363,7 @@ class Fleet extends AdminController
         $this->db->update(db_prefix() . 'fleet_bookings', [
             'delivery_note_data' => json_encode([
                 'supplier'       => trim((string) $this->input->post('supplier')),
+                'customer'       => trim((string) $this->input->post('customer')),
                 'contact_person' => trim((string) $this->input->post('contact_person')),
                 'invoice_no'     => trim((string) $this->input->post('invoice_no')),
                 'destination'    => trim((string) $this->input->post('destination')),

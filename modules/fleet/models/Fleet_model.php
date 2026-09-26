@@ -1723,6 +1723,7 @@ class Fleet_model extends App_Model
 
         return [
             'supplier'       => get_company_name($booking->userid),
+            'customer'       => '',
             'contact_person' => $contact_name,
             'invoice_no'     => $invoice_no,
             'destination'    => $booking->delivery_address,
@@ -1740,7 +1741,7 @@ class Fleet_model extends App_Model
         $data = $this->get_delivery_note_defaults($booking);
         $saved = isset($booking->delivery_note_data) ? json_decode((string) $booking->delivery_note_data, true) : null;
         if (is_array($saved)) {
-            foreach (['supplier', 'contact_person', 'invoice_no', 'destination', 'dispatch_date'] as $key) {
+            foreach (['supplier', 'customer', 'contact_person', 'invoice_no', 'destination', 'dispatch_date'] as $key) {
                 if (array_key_exists($key, $saved)) {
                     $data[$key] = $saved[$key];
                 }

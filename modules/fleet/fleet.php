@@ -24,7 +24,7 @@ Author URI: https://codecanyon.net/user/greentech_solutions
 
 define('FLEET_MODULE_NAME', 'fleet');
 
-define('FLEET_REVISION', 106);
+define('FLEET_REVISION', 107);
 
 define('FLEET_MODULE_UPLOAD_FOLDER', module_dir_path(FLEET_MODULE_NAME, 'uploads'));
 

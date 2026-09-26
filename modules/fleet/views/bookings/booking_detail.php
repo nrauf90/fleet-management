@@ -206,6 +206,9 @@ $can_view_invoice = has_permission('invoices', '', 'view');
                     <?php echo render_input('dn_supplier', 'delivery_note_supplier', $delivery_note['supplier']); ?>
                   </div>
                   <div class="col-md-6">
+                    <?php echo render_input('dn_customer', 'delivery_note_customer', $delivery_note['customer']); ?>
+                  </div>
+                  <div class="col-md-6">
                     <?php echo render_input('dn_contact_person', 'delivery_note_contact_person', $delivery_note['contact_person']); ?>
                   </div>
                   <div class="col-md-6">

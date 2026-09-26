@@ -76,6 +76,10 @@ $show_signature = $signature_image != '' && file_exists($signature_path);
       <td><?php echo new_html_entity_decode($delivery_note['supplier']); ?></td>
     </tr>
     <tr>
+      <td class="dn-label"><?php echo _l('delivery_note_customer'); ?></td>
+      <td><?php echo new_html_entity_decode($delivery_note['customer']); ?></td>
+    </tr>
+    <tr>
       <td class="dn-label"><?php echo _l('delivery_note_contact_person'); ?></td>
       <td><?php echo new_html_entity_decode($delivery_note['contact_person']); ?></td>
     </tr>

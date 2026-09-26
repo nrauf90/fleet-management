@@ -213,6 +213,7 @@ function save_delivery_note_items(booking_id) {
     booking_id: booking_id,
     rows: rows,
     supplier: $('#dn_supplier').val(),
+    customer: $('#dn_customer').val(),
     contact_person: $('#dn_contact_person').val(),
     invoice_no: $('#dn_invoice_no').val(),
     destination: $('#dn_destination').val(),
