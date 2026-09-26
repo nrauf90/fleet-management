@@ -39,7 +39,7 @@ $show_signature = $signature_image != '' && file_exists($signature_path);
     .dn-signature img { max-height: 130px; max-width: 360px; }
     .dn-signature .dn-sig-line { border-bottom: 1px solid #000; width: 240px; margin-top: 40px; }
     .dn-actions { margin-bottom: 25px; }
-    .dn-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; opacity: 0.06; }
+    .dn-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; opacity: 0.15; }
     .dn-watermark img { width: 620px; }
     .dn-content { position: relative; z-index: 1; }
     .dn-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 0 14px; text-align: center; font-size: 13px; color: #000; z-index: 2; background: #fff; }
