@@ -1,6 +1,7 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head();
 $status = fleet_render_status_html($booking->id, 'booking', $booking->status, true);
+$can_view_invoice = has_permission('invoices', '', 'view');
 ?>
 <div id="wrapper">
   <div class="content">
@@ -97,9 +98,11 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
               <div class="col-md-6">
                 <h4 class="h4-color mtop25"><?php echo _l('admin_info'); ?></h4>
               </div>
+              <?php if ($can_view_invoice) { ?>
               <div class="col-md-6">
                 <h4 class="h4-color mtop25"><?php echo _l('financial_summary'); ?></h4>
               </div>
+              <?php } ?>
             </div>
             <hr class="hr-color">
             <div class="row">
@@ -112,10 +115,12 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
                           href="<?php echo admin_url('invoices/list_invoices/' . $booking->invoice_id) ?>"><?php echo format_invoice_number($booking->invoice_id); ?></a>
                       </td>
                     </tr>
+                    <?php if ($can_view_invoice) { ?>
                     <tr class="project-overview">
                       <td class="bold" width="30%"><?php echo _l('amount'); ?></td>
                       <td><?php echo app_format_money($booking->amount, ''); ?></td>
                     </tr>
+                    <?php } ?>
                     <tr class="project-overview">
                       <td class="bold" width="30%"><?php echo _l('fleet_importer'); ?></td>
                       <td><?php echo new_html_entity_decode(isset($booking->importer) ? $booking->importer : ''); ?></td>
@@ -135,6 +140,7 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
                   </tbody>
                 </table>
               </div>
+              <?php if ($can_view_invoice) { ?>
               <div class="col-md-6">
                 <table class="table table-striped no-margin">
                   <tbody>
@@ -187,6 +193,7 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
                   </div>
                 </div>
               </div>
+              <?php } ?>
             </div>
 
             <div class="row mtop25">
@@ -280,7 +287,7 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
               var fleet_driver_vehicle_map = <?php echo json_encode((object) $driver_vehicle_map); ?>;
             </script>
 
-            <?php if (isset($invoice_items) && count($invoice_items) > 0) { ?>
+            <?php if ($can_view_invoice && isset($invoice_items) && count($invoice_items) > 0) { ?>
               <div class="row mtop25">
                 <div class="col-md-12">
                   <h4 class="h4-color"><?php echo _l('invoice_items'); ?></h4>
