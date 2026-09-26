@@ -66,6 +66,10 @@ $arrAtt['data-type'] = 'currency';
         <?php echo render_textarea('description', 'description'); ?>
         <?php echo render_input('hand_cash', 'hand_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
         <?php echo render_input('used_cash', 'used_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
+        <?php echo render_select('paymentmode', $payment_modes, ['id', 'name'], 'payment_mode'); ?>
+        <div class="logbook-transaction-field" style="display: none;">
+          <?php echo render_input('transaction_id', 'logbook_transaction_id'); ?>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo _l('close'); ?></button>

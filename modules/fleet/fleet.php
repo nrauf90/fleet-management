@@ -24,7 +24,7 @@ Author URI: https://codecanyon.net/user/greentech_solutions
 
 define('FLEET_MODULE_NAME', 'fleet');
 
-define('FLEET_REVISION', 100);
+define('FLEET_REVISION', 106);
 
 define('FLEET_MODULE_UPLOAD_FOLDER', module_dir_path(FLEET_MODULE_NAME, 'uploads'));
 
@@ -33,6 +33,10 @@ define('FLEET_MODULE_UPLOAD_FOLDER', module_dir_path(FLEET_MODULE_NAME, 'uploads
 hooks()->add_action('admin_init', 'fleet_module_init_menu_items');
 
 hooks()->add_action('admin_init', 'fleet_permissions');
+
+hooks()->add_action('admin_init', 'fleet_init_customer_profile_tabs');
+
+hooks()->add_action('admin_init', 'fleet_run_db_upgrades');
 
 hooks()->add_action('app_admin_head', 'fleet_add_head_components');
 
@@ -49,6 +53,24 @@ hooks()->add_action('fleet_init', FLEET_MODULE_NAME . '_appint');
 hooks()->add_action('pre_activate_module', FLEET_MODULE_NAME . '_preactivate');
 
 hooks()->add_action('pre_deactivate_module', FLEET_MODULE_NAME . '_predeactivate');
+
+hooks()->add_filter('invoice_pdf_info', 'fleet_invoice_drivers_pdf_filter', 10, 2);
+hooks()->add_action('after_right_panel_invoicehtml', 'fleet_invoice_drivers_html_action');
+hooks()->add_action('after_right_panel_invoice_preview_template', 'fleet_invoice_drivers_html_action');
+
+hooks()->add_action('after_right_panel_invoicehtml', 'fleet_invoice_importer_exporter_html_action');
+hooks()->add_action('after_right_panel_invoice_preview_template', 'fleet_invoice_importer_exporter_html_action');
+
+hooks()->add_filter('invoice_pdf_info', 'fleet_invoice_importer_exporter_pdf_filter', 20, 2);
+
+hooks()->add_action('after_left_panel_invoice_preview_template', 'fleet_invoice_left_panel_layout_action');
+hooks()->add_action('after_left_panel_invoicehtml', 'fleet_invoice_left_panel_layout_action');
+hooks()->add_filter('invoicepdf_organization_info', 'fleet_invoice_pdf_organization_filter', 20, 2);
+hooks()->add_filter('invoice_pdf_info', 'fleet_invoice_pdf_info_layout_filter', 5, 2);
+
+hooks()->add_action('after_invoice_deleted', 'fleet_on_invoice_deleted');
+
+hooks()->add_action('after_render_invoice_template', 'fleet_invoice_importer_exporter_form_fields');
 
 
 
@@ -97,6 +119,10 @@ function fleet_add_head_components()
 
         echo '<link href="' . module_dir_url(FLEET_MODULE_NAME, 'assets/css/client_style.css') . '"  rel="stylesheet" type="text/css" />';
 
+    }
+
+    if (!(strpos($viewuri, '/admin/invoices') === false) || !(strpos($viewuri, '/admin/invoice') === false)) {
+        echo '<link href="' . module_dir_url(FLEET_MODULE_NAME, 'assets/css/invoice_layout.css') . '?v=' . FLEET_REVISION . '" rel="stylesheet" type="text/css" />';
     }
 
 }
@@ -266,7 +292,7 @@ function fleet_add_footer_components()
 
     if (!(strpos($viewuri, '/admin/fleet/booking_detail') === false)) {
 
-        echo '<script src="' . module_dir_url(FLEET_MODULE_NAME, 'assets/js/bookings/booking_detail.js') . '"></script>';
+        echo '<script src="' . module_dir_url(FLEET_MODULE_NAME, 'assets/js/bookings/booking_detail.js') . '?v=' . FLEET_REVISION . '"></script>';
 
     }
 
@@ -498,6 +524,10 @@ function fleet_add_footer_components()
 
     }
 
+    if (!(strpos($viewuri, '/admin/invoices') === false) || !(strpos($viewuri, '/admin/invoice') === false)) {
+        echo '<script src="' . module_dir_url(FLEET_MODULE_NAME, 'assets/js/invoices/importer_exporter.js') . '?v=' . FLEET_REVISION . '"></script>';
+    }
+
 }
 
 
@@ -519,7 +549,15 @@ function fleet_module_activation_hook()
 
 }
 
-
+/**
+ * Run idempotent fleet DB upgrades on admin init
+ * @return void
+ */
+function fleet_run_db_upgrades()
+{
+    $CI = &get_instance();
+    require_once __DIR__ . '/install.php';
+}
 
 /**
 
@@ -960,6 +998,23 @@ function fleet_module_init_menu_items()
 
 
 /**
+ * Register fleet tab on customer profile
+ */
+function fleet_init_customer_profile_tabs()
+{
+    $CI = &get_instance();
+    $CI->app_tabs->add_customer_profile_tab('fleet_booking_rate', [
+        'name'     => _l('fleet_booking_rate'),
+        'icon'     => 'fa fa-truck',
+        'view'     => 'fleet/clients/groups/fleet_booking_rate',
+        'position' => 55,
+        'badge'    => [],
+    ]);
+}
+
+
+
+/**
 
  * Init fleet module permissions in setup in admin_init hook
 
@@ -1322,6 +1377,11 @@ function fleet_client_add_head_components()
 
         echo '<link href="' . base_url('modules/fleet/assets/css/client_style.css') . '"  rel="stylesheet" type="text/css" />';
 
+    }
+
+    if (!(strpos($viewuri, '/invoice/') === false)) {
+        echo '<link href="' . module_dir_url(FLEET_MODULE_NAME, 'assets/css/invoice_layout.css') . '?v=' . FLEET_REVISION . '" rel="stylesheet" type="text/css" />';
+        echo '<script src="' . module_dir_url(FLEET_MODULE_NAME, 'assets/js/invoices/importer_exporter.js') . '?v=' . FLEET_REVISION . '"></script>';
     }
 
 }

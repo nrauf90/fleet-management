@@ -1588,6 +1588,322 @@ class Fleet_model extends App_Model
     }
 
     /**
+     * get booking by invoice id
+     * @param  integer $invoice_id
+     * @return object|null
+     */
+    public function get_booking_by_invoice_id($invoice_id)
+    {
+        $this->db->where('invoice_id', $invoice_id);
+        return $this->db->get(db_prefix() . 'fleet_bookings')->row();
+    }
+
+    /**
+     * clear booking invoice relation when invoice is deleted
+     * @param  integer $invoice_id
+     * @return boolean
+     */
+    public function clear_booking_invoice_relation($invoice_id)
+    {
+        if (!$invoice_id) {
+            return false;
+        }
+
+        $this->db->where('invoice_id', $invoice_id);
+        $this->db->update(db_prefix() . 'fleet_bookings', [
+            'invoice_id'   => 0,
+            'invoice_hash' => '',
+        ]);
+
+        return $this->db->affected_rows() > 0;
+    }
+
+    /**
+     * get distinct driver names for a booking
+     * @param  integer $booking_id
+     * @return array
+     */
+    public function get_booking_driver_names($booking_id)
+    {
+        $rows = $this->get_booking_driver_vehicle_rows($booking_id);
+
+        return array_column($rows, 'driver');
+    }
+
+    /**
+     * get driver and vehicle rows for a booking (one row per logbook pair)
+     * @param  integer $booking_id
+     * @return array<int, array{driver: string, vehicle: string}>
+     */
+    public function get_booking_driver_vehicle_rows($booking_id)
+    {
+        $this->db->select('driver_id, vehicle_id');
+        $this->db->where('booking_id', $booking_id);
+        $this->db->where('driver_id >', 0);
+        $this->db->group_by('driver_id, vehicle_id');
+        $rows = $this->db->get(db_prefix() . 'fleet_logbooks')->result_array();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $driver = get_staff_full_name($row['driver_id']);
+            if (!$driver) {
+                continue;
+            }
+
+            $vehicle = '';
+            if (!empty($row['vehicle_id'])) {
+                $vehicle_row = $this->get_vehicle($row['vehicle_id']);
+                if ($vehicle_row) {
+                    $vehicle = trim((string) ($vehicle_row->license_plate ?: $vehicle_row->name));
+                }
+            }
+
+            $result[] = [
+                'driver'  => $driver,
+                'vehicle' => $vehicle,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Map of driver_id => vehicle label from a booking's logbook rows.
+     * Used to prefill truck numbers on the delivery note editor.
+     * @param  int $booking_id
+     * @return array<int, string>
+     */
+    public function get_booking_driver_vehicle_map($booking_id)
+    {
+        $this->db->select('driver_id, vehicle_id');
+        $this->db->where('booking_id', $booking_id);
+        $this->db->where('driver_id >', 0);
+        $this->db->order_by('id', 'desc');
+        $rows = $this->db->get(db_prefix() . 'fleet_logbooks')->result_array();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $driver_id = (int) $row['driver_id'];
+            if (isset($map[$driver_id])) {
+                continue;
+            }
+            $vehicle = '';
+            if (!empty($row['vehicle_id'])) {
+                $vehicle_row = $this->get_vehicle($row['vehicle_id']);
+                if ($vehicle_row) {
+                    $vehicle = trim((string) ($vehicle_row->license_plate ?: $vehicle_row->name));
+                }
+            }
+            $map[$driver_id] = $vehicle;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Default delivery note header values derived from the booking
+     * @param  object $booking
+     * @return array
+     */
+    public function get_delivery_note_defaults($booking)
+    {
+        $contact_name = '';
+        $contact = null;
+        if (!empty($booking->contactid)) {
+            $contact = $this->db->get_where(db_prefix() . 'contacts', ['id' => (int) $booking->contactid])->row();
+        }
+        if (!$contact && !empty($booking->userid)) {
+            $contact = $this->db->get_where(db_prefix() . 'contacts', ['userid' => $booking->userid, 'is_primary' => 1])->row();
+        }
+        if ($contact) {
+            $contact_name = trim($contact->firstname . ' ' . $contact->lastname);
+        }
+
+        $invoice_no = trim((string) $booking->importer_invoice_number);
+
+        return [
+            'supplier'       => get_company_name($booking->userid),
+            'contact_person' => $contact_name,
+            'invoice_no'     => $invoice_no,
+            'destination'    => $booking->delivery_address,
+            'dispatch_date'  => $booking->delivery_date,
+        ];
+    }
+
+    /**
+     * Delivery note header values: saved overrides merged over booking defaults
+     * @param  object $booking
+     * @return array
+     */
+    public function get_delivery_note_data($booking)
+    {
+        $data = $this->get_delivery_note_defaults($booking);
+        $saved = isset($booking->delivery_note_data) ? json_decode((string) $booking->delivery_note_data, true) : null;
+        if (is_array($saved)) {
+            foreach (['supplier', 'contact_person', 'invoice_no', 'destination', 'dispatch_date'] as $key) {
+                if (array_key_exists($key, $saved)) {
+                    $data[$key] = $saved[$key];
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Delivery note rows for a booking
+     * @param  int $booking_id
+     * @return array
+     */
+    public function get_delivery_note_items($booking_id)
+    {
+        $this->db->where('booking_id', (int) $booking_id);
+        $this->db->order_by('sort', 'asc');
+        $this->db->order_by('id', 'asc');
+
+        return $this->db->get(db_prefix() . 'fleet_delivery_note_items')->result_array();
+    }
+
+    /**
+     * Replace all delivery note rows for a booking
+     * @param  int   $booking_id
+     * @param  array $rows each: driver_id, truck_no, packages
+     * @return bool
+     */
+    public function save_delivery_note_items($booking_id, $rows)
+    {
+        $this->db->where('booking_id', (int) $booking_id);
+        $this->db->delete(db_prefix() . 'fleet_delivery_note_items');
+
+        $sort = 0;
+        foreach ($rows as $row) {
+            $driver_id = isset($row['driver_id']) ? (int) $row['driver_id'] : 0;
+            $truck_no = isset($row['truck_no']) ? trim((string) $row['truck_no']) : '';
+            $packages = isset($row['packages']) ? (int) $row['packages'] : 0;
+
+            if ($driver_id <= 0 && $truck_no === '') {
+                continue;
+            }
+
+            $this->db->insert(db_prefix() . 'fleet_delivery_note_items', [
+                'booking_id' => (int) $booking_id,
+                'driver_id'  => $driver_id > 0 ? $driver_id : null,
+                'truck_no'   => $truck_no,
+                'packages'   => max(0, $packages),
+                'sort'       => $sort++,
+            ]);
+        }
+
+        return true;
+    }
+
+    /**
+     * get client fleet booking defaults (rate, importer, exporter)
+     * @param  integer $client_id
+     * @return object|null
+     */
+    public function get_client_fleet_defaults($client_id)
+    {
+        if (!$client_id) {
+            return null;
+        }
+
+        $this->db->where('client_id', $client_id);
+
+        return $this->db->get(db_prefix() . 'fleet_client_booking_rates')->row();
+    }
+
+    /**
+     * get client fixed booking rate
+     * @param  integer $client_id
+     * @return float
+     */
+    public function get_client_fixed_booking_rate($client_id)
+    {
+        $row = $this->get_client_fleet_defaults($client_id);
+
+        if ($row && $row->fixed_rate > 0) {
+            return (float) $row->fixed_rate;
+        }
+
+        return 0;
+    }
+
+    /**
+     * get client default importer / exporter
+     * @param  integer $client_id
+     * @return array{importer: string, exporter: string}
+     */
+    public function get_client_importer_exporter($client_id)
+    {
+        $row = $this->get_client_fleet_defaults($client_id);
+
+        return [
+            'importer'         => $row && isset($row->importer) ? (string) $row->importer : '',
+            'exporter'         => $row && isset($row->exporter) ? (string) $row->exporter : '',
+            'receipt_address'  => $row && isset($row->receipt_address) ? (string) $row->receipt_address : '',
+            'delivery_address' => $row && isset($row->delivery_address) ? (string) $row->delivery_address : '',
+        ];
+    }
+
+    /**
+     * save client fixed booking rate and importer/exporter defaults
+     * @param  integer $client_id
+     * @param  float   $rate
+     * @param  string  $importer
+     * @param  string  $exporter
+     * @return boolean
+     */
+    public function save_client_booking_rate($client_id, $rate, $importer = '', $exporter = '', $receipt_address = '', $delivery_address = '')
+    {
+        if (!$client_id) {
+            return false;
+        }
+
+        $rate = (float) str_replace(',', '', $rate);
+        $payload = [
+            'fixed_rate'       => $rate,
+            'importer'         => $importer,
+            'exporter'         => $exporter,
+            'receipt_address'  => $receipt_address,
+            'delivery_address' => $delivery_address,
+        ];
+        $existing = $this->db->get_where(db_prefix() . 'fleet_client_booking_rates', ['client_id' => $client_id])->row();
+
+        if ($existing) {
+            $this->db->where('client_id', $client_id);
+            $this->db->update(db_prefix() . 'fleet_client_booking_rates', $payload);
+
+            return $this->db->affected_rows() >= 0;
+        }
+
+        $this->db->insert(db_prefix() . 'fleet_client_booking_rates', array_merge($payload, [
+            'client_id'   => $client_id,
+            'datecreated' => date('Y-m-d H:i:s'),
+            'addedfrom'   => get_staff_user_id(),
+        ]));
+
+        return $this->db->insert_id() > 0;
+    }
+
+    /**
+     * resolve booking amount using client fixed rate when amount is empty
+     * @param  integer     $client_id
+     * @param  string|float $amount
+     * @return float
+     */
+    public function resolve_booking_amount($client_id, $amount)
+    {
+        $amount = (float) str_replace(',', '', (string) $amount);
+
+        if ($amount > 0) {
+            return $amount;
+        }
+
+        return $this->get_client_fixed_booking_rate($client_id);
+    }
+
+    /**
      * booking change status
      * @param  array  $data         
      * @param  string  $booking_number 
@@ -1622,7 +1938,14 @@ class Fleet_model extends App_Model
         $payment_modes = $this->payment_modes_model->get();
         $count = 0;
         $newitems = [];
-        array_push($newitems, array('order' => 1, 'description' => 'Fleet Booking', 'long_description' => '', 'qty' => 1, 'unit' => '', 'rate' => $booking->amount, 'taxname' => ''));
+        $amount = $this->resolve_booking_amount($booking->userid, $booking->amount);
+
+        if ($amount > 0 && (float) $booking->amount != $amount) {
+            $this->update_booking(['amount' => $amount], $booking->id);
+            $booking->amount = $amount;
+        }
+
+        array_push($newitems, array('order' => 1, 'description' => 'Fleet Booking', 'long_description' => '', 'qty' => 1, 'unit' => '', 'rate' => $amount, 'taxname' => ''));
 
         $__number = get_option('next_invoice_number');
         $_invoice_number = str_pad($__number, get_option('number_padding_prefixes'), '0', STR_PAD_LEFT);
@@ -1650,9 +1973,21 @@ class Fleet_model extends App_Model
 
             $data['currency'] = $curreny;
             $data['number'] = $_invoice_number;
-            $data['total'] = $booking->amount;
-            $data['subtotal'] = $booking->amount;
+            $data['total'] = $amount;
+            $data['subtotal'] = $amount;
             $data['from_fleet'] = 1;
+            $predefinedNotes = fleet_get_predefined_invoice_notes();
+            $data['clientnote'] = $predefinedNotes['clientnote'];
+            $data['terms'] = $predefinedNotes['terms'];
+            $data['importer'] = !empty($booking->importer) ? $booking->importer : '';
+            $data['exporter'] = !empty($booking->exporter) ? $booking->exporter : '';
+            $data['importer_invoice_number'] = !empty($booking->importer_invoice_number) ? $booking->importer_invoice_number : '';
+
+            if ($data['importer'] === '' && $data['exporter'] === '') {
+                $parties = $this->get_client_importer_exporter($booking->userid);
+                $data['importer'] = $parties['importer'];
+                $data['exporter'] = $parties['exporter'];
+            }
 
             $payment_model_list = [];
             if ($payment_modes) {

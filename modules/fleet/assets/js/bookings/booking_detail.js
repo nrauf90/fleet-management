@@ -168,3 +168,82 @@ if (typeof Dropzone !== 'undefined') {
     }
   });
 }
+
+function update_delivery_note_totals() {
+  var total = 0;
+  $('#delivery-note-items tbody tr.dn-item-row').each(function (index) {
+    $(this).find('.dn-s-no').text(index + 1);
+    total += parseInt($(this).find('.dn-packages').val(), 10) || 0;
+  });
+  $('#delivery-note-total').text(total);
+}
+
+function add_delivery_note_row() {
+  var row =
+    '<tr class="dn-item-row">' +
+    '<td class="dn-s-no"></td>' +
+    '<td><select class="selectpicker dn-driver" data-width="100%"><option value=""></option>' +
+    (typeof fleet_dn_driver_options_html !== 'undefined' ? fleet_dn_driver_options_html : '') +
+    '</select></td>' +
+    '<td><input type="text" class="form-control dn-truck-no"></td>' +
+    '<td><input type="number" min="0" class="form-control dn-packages" value="0"></td>' +
+    '<td class="text-center"><button type="button" class="btn btn-danger btn-icon" onclick="remove_delivery_note_row(this); return false;"><i class="fa fa-remove"></i></button></td>' +
+    '</tr>';
+  $('#delivery-note-items tbody').append(row);
+  init_selectpicker();
+  update_delivery_note_totals();
+}
+
+function remove_delivery_note_row(btn) {
+  $(btn).closest('tr').remove();
+  update_delivery_note_totals();
+}
+
+function save_delivery_note_items(booking_id) {
+  var rows = [];
+  $('#delivery-note-items tbody tr.dn-item-row').each(function () {
+    rows.push({
+      driver_id: $(this).find('select.dn-driver').val(),
+      truck_no: $(this).find('.dn-truck-no').val(),
+      packages: $(this).find('.dn-packages').val(),
+    });
+  });
+
+  $.post(admin_url + 'fleet/save_delivery_note_items', {
+    booking_id: booking_id,
+    rows: rows,
+    supplier: $('#dn_supplier').val(),
+    contact_person: $('#dn_contact_person').val(),
+    invoice_no: $('#dn_invoice_no').val(),
+    destination: $('#dn_destination').val(),
+    dispatch_date: $('#dn_dispatch_date').val(),
+  }).done(function (response) {
+    response = typeof response === 'string' ? JSON.parse(response) : response;
+    if (response.success) {
+      alert_float('success', response.message);
+    } else {
+      alert_float('danger', response.message || 'Failed to save delivery note');
+    }
+  }).fail(function () {
+    alert_float('danger', 'Failed to save delivery note');
+  });
+}
+
+$(function () {
+  update_delivery_note_totals();
+
+  $(document).on('change', '#delivery-note-items select.dn-driver', function () {
+    var row = $(this).closest('tr');
+    var truck = row.find('.dn-truck-no');
+    if (!truck.val() && typeof fleet_driver_vehicle_map !== 'undefined') {
+      var plate = fleet_driver_vehicle_map[$(this).val()];
+      if (plate) {
+        truck.val(plate);
+      }
+    }
+  });
+
+  $(document).on('input', '#delivery-note-items .dn-packages', function () {
+    update_delivery_note_totals();
+  });
+});

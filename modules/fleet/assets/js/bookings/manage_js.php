@@ -29,7 +29,10 @@
       $('#booking-modal input[name="phone"]').val('');
       $('#booking-modal textarea[name="receipt_address"]').val('');
       $('#booking-modal textarea[name="delivery_address"]').val('');
+      $('#booking-modal input[name="importer_invoice_number"]').val('');
       $('#booking-modal textarea[name="note"]').val('');
+      $('#booking-modal textarea[name="importer"]').val('');
+      $('#booking-modal textarea[name="exporter"]').val('');
       $('#booking-modal textarea[name="admin_note"]').val('');
     });
 
@@ -46,6 +49,32 @@
     });
 
     init_fuel_table();
+
+    $('#booking-modal select[name="userid"]').on('change', function () {
+      var clientId = $(this).val();
+      if (!clientId) {
+        $('#booking-modal input[name="amount"]').val('');
+        $('#booking-modal textarea[name="importer"]').val('');
+        $('#booking-modal textarea[name="exporter"]').val('');
+        $('#booking-modal textarea[name="receipt_address"]').val('');
+        $('#booking-modal textarea[name="delivery_address"]').val('');
+        return;
+      }
+
+      $.get(admin_url + 'fleet/get_client_booking_rate/' + clientId).done(function (response) {
+        response = JSON.parse(response);
+        if (response.fixed_rate > 0) {
+          $('#booking-modal input[name="amount"]').val(response.fixed_rate);
+          formatCurrency($('#booking-modal input[name="amount"]'), 'blur');
+        } else {
+          $('#booking-modal input[name="amount"]').val('');
+        }
+        $('#booking-modal textarea[name="importer"]').val(response.importer || '');
+        $('#booking-modal textarea[name="exporter"]').val(response.exporter || '');
+        $('#booking-modal textarea[name="receipt_address"]').val(response.receipt_address || '');
+        $('#booking-modal textarea[name="delivery_address"]').val(response.delivery_address || '');
+      });
+    });
 
 	$("input[data-type='currency']").on({
       keyup: function() {

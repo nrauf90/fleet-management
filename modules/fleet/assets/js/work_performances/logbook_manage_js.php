@@ -1,7 +1,40 @@
 <script type="text/javascript">
+  // Payment mode id => name, used to decide whether a transaction id is relevant.
+  var fleetPaymentModeNames = <?php
+    $fleet_pm_map = [];
+    if (isset($payment_modes) && is_array($payment_modes)) {
+        foreach ($payment_modes as $fleet_pm) {
+            $fleet_pm_map[(string) $fleet_pm['id']] = $fleet_pm['name'];
+        }
+    }
+    echo json_encode($fleet_pm_map);
+  ?>;
+
+  // Cash-style modes settle on the spot, so they carry no transaction reference.
+  function fleetModeNeedsTransactionId(modeId) {
+    "use strict";
+    if (!modeId) {
+      return false;
+    }
+    var name = fleetPaymentModeNames[String(modeId)] || '';
+    return !/cash/i.test(name);
+  }
+
+  function fleetToggleTransactionField() {
+    "use strict";
+    var $field = $('#logbook-modal .logbook-transaction-field');
+    if (fleetModeNeedsTransactionId($('#logbook-modal select[name="paymentmode"]').val())) {
+      $field.show();
+    } else {
+      $field.hide().find('input[name="transaction_id"]').val('');
+    }
+  }
+
   var fnServerParams;
   (function ($) {
     "use strict";
+
+    $(document).on('change', '#logbook-modal select[name="paymentmode"]', fleetToggleTransactionField);
 
     appValidateForm($('#logbook-form'), {
       name: 'required',
@@ -31,6 +64,9 @@
       $('#logbook-modal textarea[name="description"]').val('');
       $('#logbook-modal input[name="hand_cash"]').val('0.00');
       $('#logbook-modal input[name="used_cash"]').val('0.00');
+      $('#logbook-modal select[name="paymentmode"]').val('').change();
+      $('#logbook-modal input[name="transaction_id"]').val('');
+      fleetToggleTransactionField();
     });
 
     $('select[name="status"]').on('change', function () {
@@ -179,6 +215,9 @@
       $('textarea[name="description"]').val(response.description);
       $('input[name="hand_cash"]').val(response.hand_cash);
       $('input[name="used_cash"]').val(response.used_cash);
+      $('#logbook-modal select[name="paymentmode"]').val(response.paymentmode || '').change();
+      $('#logbook-modal input[name="transaction_id"]').val(response.transaction_id || '');
+      fleetToggleTransactionField();
 
     });
   }

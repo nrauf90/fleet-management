@@ -78,7 +78,16 @@
                      <?php echo render_textarea('delivery_address','delivery_address'); ?>
                    </div>
                 </div>
+                <?php echo render_input('importer_invoice_number', 'importer_invoice_number'); ?>
                 <?php echo render_textarea('note','note'); ?>
+                <div class="row">
+                   <div class="col-md-6">
+                     <?php echo render_textarea('importer', 'fleet_importer'); ?>
+                   </div>
+                   <div class="col-md-6">
+                     <?php echo render_textarea('exporter', 'fleet_exporter'); ?>
+                   </div>
+                </div>
                 <?php echo render_input('amount', 'amount', '', 'text', $arrAtt); ?>
                 <?php echo render_textarea('admin_note','admin_note'); ?>
          </div>

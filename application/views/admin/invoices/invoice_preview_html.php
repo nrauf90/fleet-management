@@ -106,6 +106,12 @@ if (isset($invoice->scheduled_email) && $invoice->scheduled_email) { ?>
             <?php hooks()->do_action('after_left_panel_invoice_preview_template', $invoice); ?>
         </div>
         <div class="col-sm-6 text-right">
+            <?php if (function_exists('fleet_invoice_uses_custom_layout') && fleet_invoice_uses_custom_layout($invoice)) { ?>
+            <span class="bold"><?php echo _l('importer_invoice_number'); ?></span>
+            <address class="tw-text-neutral-500">
+                <?php echo e(trim((string) ($invoice->importer_invoice_number ?? '')) !== '' ? $invoice->importer_invoice_number : '—'); ?>
+            </address>
+            <?php } else { ?>
             <span class="bold"><?php echo _l('invoice_bill_to'); ?></span>
             <address class="tw-text-neutral-500">
                 <?php echo format_customer_info($invoice, 'invoice', 'billing', true); ?>
@@ -115,6 +121,7 @@ if (isset($invoice->scheduled_email) && $invoice->scheduled_email) { ?>
             <address class="tw-text-neutral-500">
                 <?php echo format_customer_info($invoice, 'invoice', 'shipping'); ?>
             </address>
+            <?php } ?>
             <?php } ?>
             <p class="no-mbot">
                 <span class="bold">

@@ -75,6 +75,14 @@
                     <?php hooks()->do_action('after_left_panel_invoicehtml', $invoice); ?>
                 </div>
                 <div class="col-sm-6 text-right transaction-html-info-col-right">
+                    <?php if (function_exists('fleet_invoice_uses_custom_layout') && fleet_invoice_uses_custom_layout($invoice)) { ?>
+                    <span class="tw-font-medium tw-text-neutral-700">
+                        <?php echo _l('importer_invoice_number'); ?>
+                    </span>
+                    <address class="tw-text-neutral-500 tw-text-normal">
+                        <?php echo e(trim((string) ($invoice->importer_invoice_number ?? '')) !== '' ? $invoice->importer_invoice_number : '—'); ?>
+                    </address>
+                    <?php } else { ?>
                     <span class="tw-font-medium tw-text-neutral-700 invoice-html-bill-to">
                         <?php echo _l('invoice_bill_to'); ?>
                     </span>
@@ -89,6 +97,7 @@
                     <address class="invoice-html-customer-shipping-info tw-text-neutral-500 tw-text-normal">
                         <?php echo format_customer_info($invoice, 'invoice', 'shipping'); ?>
                     </address>
+                    <?php } ?>
                     <?php } ?>
                     <p class="invoice-html-date tw-mb-0 tw-text-normal">
                         <span class="tw-font-medium tw-text-neutral-700">

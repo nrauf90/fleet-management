@@ -726,3 +726,92 @@ if (!$CI->db->field_exists('recurring' ,db_prefix() . 'fleet_inspections')) {
     ");
 }
 
+if (!$CI->db->table_exists(db_prefix() . 'fleet_client_booking_rates')) {
+    $CI->db->query('CREATE TABLE ' . db_prefix() . "fleet_client_booking_rates (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `client_id` INT(11) NOT NULL,
+      `fixed_rate` DECIMAL(15,2) NOT NULL DEFAULT 0,
+      `importer` TEXT NULL,
+      `exporter` TEXT NULL,
+      `datecreated` DATETIME NULL,
+      `addedfrom` INT(11) NULL,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `client_id` (`client_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
+}
+
+if ($CI->db->table_exists(db_prefix() . 'fleet_client_booking_rates')) {
+    if (!$CI->db->field_exists('importer', db_prefix() . 'fleet_client_booking_rates')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'fleet_client_booking_rates`
+            ADD COLUMN `importer` TEXT NULL;');
+    }
+    if (!$CI->db->field_exists('exporter', db_prefix() . 'fleet_client_booking_rates')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'fleet_client_booking_rates`
+            ADD COLUMN `exporter` TEXT NULL;');
+    }
+}
+
+if ($CI->db->table_exists(db_prefix() . 'fleet_bookings')) {
+    if (!$CI->db->field_exists('importer', db_prefix() . 'fleet_bookings')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'fleet_bookings`
+            ADD COLUMN `importer` TEXT NULL;');
+    }
+    if (!$CI->db->field_exists('exporter', db_prefix() . 'fleet_bookings')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'fleet_bookings`
+            ADD COLUMN `exporter` TEXT NULL;');
+    }
+    if (!$CI->db->field_exists('importer_invoice_number', db_prefix() . 'fleet_bookings')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'fleet_bookings`
+            ADD COLUMN `importer_invoice_number` TEXT NULL;');
+    }
+}
+
+if ($CI->db->table_exists(db_prefix() . 'invoices')) {
+    if (!$CI->db->field_exists('importer', db_prefix() . 'invoices')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'invoices`
+            ADD COLUMN `importer` TEXT NULL;');
+    }
+    if (!$CI->db->field_exists('exporter', db_prefix() . 'invoices')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'invoices`
+            ADD COLUMN `exporter` TEXT NULL;');
+    }
+    if (!$CI->db->field_exists('importer_invoice_number', db_prefix() . 'invoices')) {
+        $CI->db->query('ALTER TABLE `' . db_prefix() . 'invoices`
+            ADD COLUMN `importer_invoice_number` TEXT NULL;');
+        $CI->db->query('UPDATE `' . db_prefix() . 'invoices` i
+            JOIN `' . db_prefix() . "fleet_bookings` b ON b.invoice_id = i.id
+            SET i.importer_invoice_number = b.importer_invoice_number
+            WHERE b.importer_invoice_number IS NOT NULL AND b.importer_invoice_number != ''");
+    }
+}
+
+if (!$CI->db->field_exists('paymentmode', db_prefix() . 'fleet_logbooks')) {
+  $CI->db->query('ALTER TABLE `' . db_prefix() . "fleet_logbooks`
+    ADD COLUMN `paymentmode` VARCHAR(50) NULL DEFAULT NULL,
+    ADD COLUMN `transaction_id` VARCHAR(100) NULL DEFAULT NULL;
+    ");
+}
+
+if (!$CI->db->field_exists('receipt_address', db_prefix() . 'fleet_client_booking_rates')) {
+  $CI->db->query('ALTER TABLE `' . db_prefix() . "fleet_client_booking_rates`
+    ADD COLUMN `receipt_address` TEXT NULL DEFAULT NULL,
+    ADD COLUMN `delivery_address` TEXT NULL DEFAULT NULL;
+    ");
+}
+
+if (!$CI->db->table_exists(db_prefix() . 'fleet_delivery_note_items')) {
+    $CI->db->query('CREATE TABLE ' . db_prefix() . "fleet_delivery_note_items (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `booking_id` INT(11) NOT NULL,
+      `driver_id` INT(11) NULL,
+      `truck_no` VARCHAR(191) NULL,
+      `packages` INT(11) NOT NULL DEFAULT 0,
+      `sort` INT(11) NOT NULL DEFAULT 0,
+      PRIMARY KEY (`id`),
+      KEY `booking_id` (`booking_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
+}
+
+if (!$CI->db->field_exists('delivery_note_data', db_prefix() . 'fleet_bookings')) {
+    $CI->db->query('ALTER TABLE `' . db_prefix() . "fleet_bookings` ADD COLUMN `delivery_note_data` TEXT NULL DEFAULT NULL");
+}

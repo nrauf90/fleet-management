@@ -3004,6 +3004,11 @@ class Fleet extends AdminController
 
         $data['bookings'] = $this->fleet_model->get_booking();
 
+        $this->load->model('payment_modes_model');
+        $data['payment_modes'] = $this->payment_modes_model->get('', [
+            'invoices_only !=' => 1,
+        ]);
+
         // Calculate total used cash from logbooks
         $this->db->select_sum('used_cash');
         $this->db->where('booking_id', $id);
@@ -3014,11 +3019,19 @@ class Fleet extends AdminController
         $data['total_used_cash'] = $total_used_cash ? $total_used_cash : 0;
         $data['total_rented_cash'] = $total_rented_cash ? $total_rented_cash : 0;
 
+        $data['delivery_note_items'] = $this->fleet_model->get_delivery_note_items($id);
+        $data['driver_vehicle_map'] = $this->fleet_model->get_booking_driver_vehicle_map($id);
+        $data['delivery_note'] = $this->fleet_model->get_delivery_note_data($data['booking']);
+
         if ($data['booking']->invoice_id) {
             $this->load->model('invoices_model');
             $invoice = $this->invoices_model->get($data['booking']->invoice_id);
             if ($invoice) {
                 $data['invoice_items'] = get_items_by_type('invoice', $data['booking']->invoice_id);
+            } else {
+                $this->fleet_model->clear_booking_invoice_relation($data['booking']->invoice_id);
+                $data['booking']->invoice_id = 0;
+                $data['booking']->invoice_hash = '';
             }
         }
 
@@ -3206,6 +3219,76 @@ class Fleet extends AdminController
     }
 
     /**
+     * Get client fixed booking rate
+     * @param  integer $client_id
+     * @return json
+     */
+    public function get_client_booking_rate($client_id = '')
+    {
+        if (
+            !has_permission('fleet_bookings', '', 'view')
+            && !has_permission('customers', '', 'view')
+            && !has_permission('invoices', '', 'create')
+            && !has_permission('invoices', '', 'edit')
+            && !has_permission('invoices', '', 'view')
+        ) {
+            access_denied('fleet_bookings');
+        }
+
+        $defaults = $this->fleet_model->get_client_fleet_defaults($client_id);
+        $parties = $this->fleet_model->get_client_importer_exporter($client_id);
+
+        echo json_encode([
+            'fixed_rate'       => $defaults && $defaults->fixed_rate > 0 ? (float) $defaults->fixed_rate : 0,
+            'importer'         => $parties['importer'],
+            'exporter'         => $parties['exporter'],
+            'receipt_address'  => $parties['receipt_address'],
+            'delivery_address' => $parties['delivery_address'],
+        ]);
+        die();
+    }
+
+    /**
+     * Save client fixed booking rate
+     * @return void
+     */
+    public function save_client_booking_rate()
+    {
+        if (!has_permission('customers', '', 'edit') && !has_permission('fleet_bookings', '', 'edit')) {
+            access_denied('customers');
+        }
+
+        $client_id = $this->input->post('client_id');
+        $fixed_rate = $this->input->post('fixed_rate');
+        $importer = $this->input->post('importer');
+        $exporter = $this->input->post('exporter');
+        $receipt_address = $this->input->post('receipt_address');
+        $delivery_address = $this->input->post('delivery_address');
+
+        if (!$client_id) {
+            set_alert('danger', _l('something_went_wrong'));
+            redirect(admin_url('clients'));
+        }
+
+        $success = $this->fleet_model->save_client_booking_rate(
+            $client_id,
+            $fixed_rate,
+            $importer !== null ? $importer : '',
+            $exporter !== null ? $exporter : '',
+            $receipt_address !== null ? $receipt_address : '',
+            $delivery_address !== null ? $delivery_address : ''
+        );
+
+        if ($success) {
+            set_alert('success', _l('updated_successfully', _l('fleet_booking_rate')));
+        } else {
+            set_alert('danger', _l('something_went_wrong'));
+        }
+
+        redirect(admin_url('clients/client/' . $client_id . '?group=fleet_booking_rate'));
+    }
+
+    /**
      * delete booking
      * @param  integer $id 
      */
@@ -3234,6 +3317,9 @@ class Fleet extends AdminController
                 access_denied('fleet');
             }
             $data["amount"] = str_replace(",", "", $data["amount"]);
+            if (isset($data['userid'])) {
+                $data['amount'] = $this->fleet_model->resolve_booking_amount($data['userid'], $data['amount']);
+            }
             $success = $this->fleet_model->add_booking($data);
             if ($success) {
                 $message = _l('added_successfully');
@@ -3256,10 +3342,65 @@ class Fleet extends AdminController
     }
 
     /**
-     * garage detail
-     * @param  integer $garage_id 
-     * @return view               
+     * Save delivery note driver/truck/package rows for a booking (ajax)
+     * @return json
      */
+    public function save_delivery_note_items()
+    {
+        if (!has_permission('fleet_bookings', '', 'edit')) {
+            ajax_access_denied();
+        }
+
+        $booking_id = (int) $this->input->post('booking_id');
+        $rows = $this->input->post('rows');
+        $rows = is_array($rows) ? $rows : [];
+
+        $success = $this->fleet_model->save_delivery_note_items($booking_id, $rows);
+
+        $dispatch_date = trim((string) $this->input->post('dispatch_date'));
+        $dispatch_date = $dispatch_date !== '' ? to_sql_date($dispatch_date) : '';
+        $this->db->where('id', $booking_id);
+        $this->db->update(db_prefix() . 'fleet_bookings', [
+            'delivery_note_data' => json_encode([
+                'supplier'       => trim((string) $this->input->post('supplier')),
+                'contact_person' => trim((string) $this->input->post('contact_person')),
+                'invoice_no'     => trim((string) $this->input->post('invoice_no')),
+                'destination'    => trim((string) $this->input->post('destination')),
+                'dispatch_date'  => $dispatch_date,
+            ]),
+        ]);
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? _l('updated_successfully', _l('delivery_note')) : _l('something_went_wrong'),
+        ]);
+        die();
+    }
+
+    /**
+     * Printable delivery note for a booking
+     * @param  integer $booking_id
+     * @return view
+     */
+    public function delivery_note($booking_id = '')
+    {
+        if (!has_permission('fleet_bookings', '', 'view')) {
+            access_denied('fleet_bookings');
+        }
+
+        $this->load->model('fleet_model');
+        $booking = $this->fleet_model->get_booking($booking_id);
+        if (!$booking) {
+            redirect(admin_url('fleet/bookings'));
+        }
+
+        $data['booking'] = $booking;
+        $data['items'] = $this->fleet_model->get_delivery_note_items($booking_id);
+        $data['delivery_note'] = $this->fleet_model->get_delivery_note_data($booking);
+        $data['title'] = _l('delivery_note');
+
+        $this->load->view('bookings/delivery_note', $data);
+    }
     public function garage_detail($garage_id)
     {
 
@@ -3564,6 +3705,11 @@ class Fleet extends AdminController
         $data['vehicles'] = $this->fleet_model->get_vehicle();
         $data['drivers'] = $this->fleet_model->get_driver();
 
+        $this->load->model('payment_modes_model');
+        $data['payment_modes'] = $this->payment_modes_model->get('', [
+            'invoices_only !=' => 1,
+        ]);
+
         $this->load->view('work_performances/manage', $data);
     }
 
@@ -3680,17 +3826,48 @@ class Fleet extends AdminController
      * add logbook
      * @return json
      */
+    /**
+     * A transaction id only means something for non-cash modes.
+     * @param  array $data logbook post data
+     * @return array
+     */
+    private function sanitize_logbook_payment($data)
+    {
+        $data['paymentmode'] = isset($data['paymentmode']) && $data['paymentmode'] !== ''
+            ? $data['paymentmode']
+            : null;
+
+        $data['transaction_id'] = isset($data['transaction_id']) ? trim($data['transaction_id']) : '';
+
+        if ($data['paymentmode']) {
+            $this->load->model('payment_modes_model');
+            $mode = $this->payment_modes_model->get($data['paymentmode']);
+            if ($mode && stripos($mode->name, 'cash') !== false) {
+                $data['transaction_id'] = '';
+            }
+        }
+
+        if ($data['transaction_id'] === '') {
+            $data['transaction_id'] = null;
+        }
+
+        return $data;
+    }
+
     public function logbook()
     {
         $data = $this->input->post();
+        $logbook_id = 0;
         if ($data['id'] == '') {
             if (!has_permission('fleet_work_performance', '', 'create')) {
                 access_denied('fleet');
             }
             $data['hand_cash'] = str_replace(",", "", $data['hand_cash']);
             $data['used_cash'] = str_replace(",", "", $data['used_cash']);
+            $data = $this->sanitize_logbook_payment($data);
             $success = $this->fleet_model->add_logbook($data);
             if ($success) {
+                $logbook_id = $success;
                 add_notification([
                     'description' => 'not_logbook_assigned_to_you',
                     'touserid' => $data['driver_id'],
@@ -3711,12 +3888,17 @@ class Fleet extends AdminController
             unset($data['id']);
             $data['hand_cash'] = str_replace(",", "", $data['hand_cash']);
             $data['used_cash'] = str_replace(",", "", $data['used_cash']);
+            $data = $this->sanitize_logbook_payment($data);
             $success = $this->fleet_model->update_logbook($data, $id);
             if ($success) {
+                $logbook_id = $id;
                 $message = _l('updated_successfully', _l('logbooks'));
             }
         }
         echo json_encode(['success' => $success, 'message' => $message]);
+        if ($success && $logbook_id) {
+            hooks()->do_action('after_fleet_logbook_saved', $logbook_id);
+        }
         die();
     }
 
@@ -3729,6 +3911,7 @@ class Fleet extends AdminController
         if ($id != '') {
             $result = $this->fleet_model->delete_logbook($id);
             if ($result) {
+                hooks()->do_action('after_fleet_logbook_deleted', $id);
                 set_alert('success', _l('deleted_successfully', _l('logbooks')));
             } else {
                 set_alert('danger', _l('deleted_fail', _l('logbooks')));

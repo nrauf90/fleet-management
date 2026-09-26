@@ -65,10 +65,6 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
                       <td class="bold"><?php echo _l('receipt_address'); ?></td>
                       <td><?php echo new_html_entity_decode($booking->receipt_address); ?></td>
                     </tr>
-                    <tr class="project-overview">
-                      <td class="bold"><?php echo _l('note'); ?></td>
-                      <td><?php echo new_html_entity_decode($booking->note); ?></td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -119,6 +115,18 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
                     <tr class="project-overview">
                       <td class="bold" width="30%"><?php echo _l('amount'); ?></td>
                       <td><?php echo app_format_money($booking->amount, ''); ?></td>
+                    </tr>
+                    <tr class="project-overview">
+                      <td class="bold" width="30%"><?php echo _l('fleet_importer'); ?></td>
+                      <td><?php echo new_html_entity_decode(isset($booking->importer) ? $booking->importer : ''); ?></td>
+                    </tr>
+                    <tr class="project-overview">
+                      <td class="bold" width="30%"><?php echo _l('importer_invoice_number'); ?></td>
+                      <td><?php echo new_html_entity_decode(isset($booking->importer_invoice_number) ? $booking->importer_invoice_number : ''); ?></td>
+                    </tr>
+                    <tr class="project-overview">
+                      <td class="bold" width="30%"><?php echo _l('fleet_exporter'); ?></td>
+                      <td><?php echo new_html_entity_decode(isset($booking->exporter) ? $booking->exporter : ''); ?></td>
                     </tr>
                     <tr class="project-overview">
                       <td class="bold"><?php echo _l('admin_note'); ?></td>
@@ -180,6 +188,97 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
                 </div>
               </div>
             </div>
+
+            <div class="row mtop25">
+              <div class="col-md-12">
+                <h4 class="h4-color"><?php echo _l('delivery_note'); ?></h4>
+                <hr class="hr-color">
+                <p class="text-muted mbot15"><?php echo _l('delivery_note_help_text'); ?></p>
+                <div class="row">
+                  <div class="col-md-6">
+                    <?php echo render_input('dn_supplier', 'delivery_note_supplier', $delivery_note['supplier']); ?>
+                  </div>
+                  <div class="col-md-6">
+                    <?php echo render_input('dn_contact_person', 'delivery_note_contact_person', $delivery_note['contact_person']); ?>
+                  </div>
+                  <div class="col-md-6">
+                    <?php echo render_input('dn_invoice_no', 'delivery_note_invoice_no', $delivery_note['invoice_no']); ?>
+                  </div>
+                  <div class="col-md-6">
+                    <?php echo render_date_input('dn_dispatch_date', 'delivery_note_dispatch_date', _d($delivery_note['dispatch_date'])); ?>
+                  </div>
+                  <div class="col-md-12">
+                    <?php echo render_textarea('dn_destination', 'delivery_note_destination', $delivery_note['destination'], ['rows' => 2]); ?>
+                  </div>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-bordered" id="delivery-note-items">
+                    <thead>
+                      <tr>
+                        <th width="5%"><?php echo _l('delivery_note_s_no'); ?></th>
+                        <th width="45%"><?php echo _l('delivery_note_drivers_name'); ?></th>
+                        <th width="22%"><?php echo _l('delivery_note_truck_no'); ?></th>
+                        <th width="15%"><?php echo _l('delivery_note_packages'); ?></th>
+                        <th width="13%"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php
+                      $dn_driver_options = '';
+                      foreach ($drivers as $dn_driver) {
+                          $dn_driver_options .= '<option value="' . $dn_driver['staffid'] . '">'
+                              . html_escape(trim($dn_driver['firstname'] . ' ' . $dn_driver['lastname'])) . '</option>';
+                      }
+
+                      foreach ($delivery_note_items as $dn_item) { ?>
+                        <tr class="dn-item-row">
+                          <td class="dn-s-no"></td>
+                          <td>
+                            <select class="selectpicker dn-driver" data-width="100%" data-none-selected-text="<?php echo _l('driver'); ?>">
+                              <option value=""></option>
+                              <?php foreach ($drivers as $dn_driver) { ?>
+                                <option value="<?php echo $dn_driver['staffid']; ?>" <?php echo ($dn_item['driver_id'] == $dn_driver['staffid']) ? 'selected' : ''; ?>>
+                                  <?php echo html_escape(trim($dn_driver['firstname'] . ' ' . $dn_driver['lastname'])); ?>
+                                </option>
+                              <?php } ?>
+                            </select>
+                          </td>
+                          <td><input type="text" class="form-control dn-truck-no" value="<?php echo html_escape($dn_item['truck_no']); ?>"></td>
+                          <td><input type="number" min="0" class="form-control dn-packages" value="<?php echo (int) $dn_item['packages']; ?>"></td>
+                          <td class="text-center">
+                            <button type="button" class="btn btn-danger btn-icon" onclick="remove_delivery_note_row(this); return false;"><i class="fa fa-remove"></i></button>
+                          </td>
+                        </tr>
+                      <?php } ?>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="3" class="text-right bold"><?php echo _l('delivery_note_total_packages'); ?></td>
+                        <td class="bold" id="delivery-note-total">0</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div class="text-right">
+                  <button type="button" class="btn btn-default" onclick="add_delivery_note_row(); return false;">
+                    <i class="fa fa-plus"></i> <?php echo _l('delivery_note_add_row'); ?>
+                  </button>
+                  <?php if (has_permission('fleet_bookings', '', 'edit')) { ?>
+                    <button type="button" class="btn btn-info" onclick="save_delivery_note_items(<?php echo (int) $booking->id; ?>); return false;">
+                      <?php echo _l('submit'); ?>
+                    </button>
+                  <?php } ?>
+                  <a href="<?php echo admin_url('fleet/delivery_note/' . $booking->id); ?>" target="_blank" class="btn btn-default">
+                    <i class="fa fa-print"></i> <?php echo _l('print_delivery_note'); ?>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <script>
+              var fleet_dn_driver_options_html = <?php echo json_encode($dn_driver_options); ?>;
+              var fleet_driver_vehicle_map = <?php echo json_encode((object) $driver_vehicle_map); ?>;
+            </script>
 
             <?php if (isset($invoice_items) && count($invoice_items) > 0) { ?>
               <div class="row mtop25">
@@ -396,6 +495,9 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
 
           <div class="modal-body">
             <?php echo render_input('amount', 'amount', $booking->amount, 'text', $arrAtt); ?>
+            <?php echo render_textarea('importer', 'fleet_importer', isset($booking->importer) ? $booking->importer : ''); ?>
+            <?php echo render_input('importer_invoice_number', 'importer_invoice_number', isset($booking->importer_invoice_number) ? $booking->importer_invoice_number : ''); ?>
+            <?php echo render_textarea('exporter', 'fleet_exporter', isset($booking->exporter) ? $booking->exporter : ''); ?>
             <?php echo render_textarea('admin_note', 'admin_note', $booking->admin_note); ?>
           </div>
           <div class="modal-footer">
@@ -435,6 +537,10 @@ $status = fleet_render_status_html($booking->id, 'booking', $booking->status, tr
             <div class="own-vehicle-fields" style="display: none;">
               <?php echo render_input('hand_cash', 'hand_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
               <?php echo render_input('used_cash', 'used_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
+              <?php echo render_select('paymentmode', $payment_modes, ['id', 'name'], 'payment_mode'); ?>
+              <div class="logbook-transaction-field" style="display: none;">
+                <?php echo render_input('transaction_id', 'logbook_transaction_id'); ?>
+              </div>
             </div>
             <div class="rented-vehicle-fields" style="display: none;">
               <?php echo render_input('total_cash', 'total_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
