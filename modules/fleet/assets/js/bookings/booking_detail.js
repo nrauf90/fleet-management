@@ -43,14 +43,18 @@ function create_invoice(id) {
     $.post(admin_url + 'fleet/create_invoice_by_booking/' + id).done(function (
       response,
     ) {
-      response = JSON.parse(response);
+      response = typeof response === 'string' ? JSON.parse(response) : response;
       if (response.message != '') {
         alert_float('success', response.message);
-        $('#invoice-number').text(response.invoice_number);
+        $('#btn-create-invoice').addClass('hide');
+        var invoiceUrl = admin_url + 'invoices#' + response.invoice_id;
+        $('#btn-view-invoice').attr('href', invoiceUrl).removeClass('hide');
+        $('#invoice-number')
+          .text(response.invoice_number)
+          .attr('href', invoiceUrl);
       } else {
         alert_float('danger');
       }
-      $('#btn-create-invoice').addClass('hide');
     });
   }
 }
@@ -230,8 +234,91 @@ function save_delivery_note_items(booking_id) {
   });
 }
 
+function add_booking_expense(booking_id) {
+  'use strict';
+  var source = $('#booking-expense-item').val();
+  if (!source) {
+    alert_float('warning', $('#booking-expense-item').data('none-selected-text') || 'Select an item');
+    return;
+  }
+
+  var $btn = $('#btn-add-booking-expense');
+  $btn.prop('disabled', true);
+
+  $.post(admin_url + 'fleet/add_booking_expense/' + booking_id, {
+    expense_item: source,
+    vehicle_id: $('#booking-expense-vehicle').val(),
+    amount: $('#booking-expense-amount').val(),
+    date: $('#booking-expense-date').val(),
+    note: $('#booking-expense-note').val(),
+  }).done(function (response) {
+    response = typeof response === 'string' ? JSON.parse(response) : response;
+    if (response.success) {
+      alert_float('success', response.message);
+      append_booking_expense_row(response.expense);
+      $('#booking-expenses-total').text(response.total_formatted);
+      $('#booking-expenses-empty').addClass('hide');
+      $('#booking-expense-item').selectpicker('val', '');
+      $('#booking-expense-amount').val('');
+      $('#booking-expense-note').val('');
+    } else {
+      alert_float('danger', response.message || 'Failed to add expense');
+    }
+    $btn.prop('disabled', false);
+  }).fail(function () {
+    alert_float('danger', 'Failed to add expense');
+    $btn.prop('disabled', false);
+  });
+}
+
+function append_booking_expense_row(expense) {
+  'use strict';
+  if (!expense) {
+    return;
+  }
+  var deleteCell = '';
+  if (expense.can_delete) {
+    deleteCell =
+      '<a href="' +
+      expense.delete_url +
+      '" class="btn btn-danger btn-icon _delete"><i class="fa fa-remove"></i></a>';
+  }
+  var row =
+    '<tr data-expense-id="' +
+    expense.id +
+    '">' +
+    '<td>' +
+    $('<div>').text(expense.date).html() +
+    '</td>' +
+    '<td>' +
+    $('<div>').text(expense.description).html() +
+    '</td>' +
+    '<td>' +
+    $('<div>').text(expense.vehicle_name).html() +
+    '</td>' +
+    '<td class="expense-amount" data-amount="' +
+    expense.amount +
+    '">' +
+    $('<div>').text(expense.amount_formatted).html() +
+    '</td>' +
+    '<td>' +
+    deleteCell +
+    '</td>' +
+    '</tr>';
+  $('#booking-expenses-table tbody').append(row);
+}
+
 $(function () {
   update_delivery_note_totals();
+
+  $(document).on('change', '#booking-expense-item', function () {
+    var amount = $(this).find('option:selected').data('amount');
+    if (typeof amount !== 'undefined' && amount !== null && amount !== '') {
+      var $amountInput = $('#booking-expense-amount');
+      $amountInput.val(amount);
+      formatCurrency($amountInput);
+    }
+  });
 
   $(document).on('change', '#delivery-note-items select.dn-driver', function () {
     var row = $(this).closest('tr');

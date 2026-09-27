@@ -72,6 +72,7 @@ class Fleet extends AdminController
         $data['tab'][] = 'insurance_status';
         $data['tab'][] = 'part_types';
         $data['tab'][] = 'part_groups';
+        $data['tab'][] = 'fuel_routes';
 
         $data['tab_2'] = $this->input->get('tab');
         if ($data['group'] == '') {
@@ -954,6 +955,7 @@ class Fleet extends AdminController
             $data['vehicle_tabs']['maintenance'] = ['name' => 'maintenance', 'icon' => '<i class="fa fa-users menu-icon"></i>'];
             $data['vehicle_tabs']['lifecycle'] = ['name' => 'lifecycle', 'icon' => '<i class="fa fa-file-powerpoint menu-icon"></i>'];
             $data['vehicle_tabs']['financial'] = ['name' => 'financial', 'icon' => '<i class="fa fa-file-text menu-icon"></i>'];
+            $data['vehicle_tabs']['expenses'] = ['name' => 'expenses', 'icon' => '<i class="fa fa-money-bill-wave menu-icon"></i>'];
             $data['vehicle_tabs']['specifications'] = ['name' => 'specifications', 'icon' => '<i class="fa fa-cart-plus menu-icon"></i>'];
             $data['vehicle_tabs']['assignment_history'] = ['name' => 'assignment_history', 'icon' => '<i class="fa fa-history menu-icon"></i>'];
             $data['vehicle_tabs']['fuel_history'] = ['name' => 'fuel_history', 'icon' => '<i class="fa fa-gas-pump menu-icon"></i>'];
@@ -980,6 +982,15 @@ class Fleet extends AdminController
 
             } elseif ($group == 'financial') {
                 $data['vendors'] = $this->fleet_model->get_vendor();
+            } elseif ($group == 'expenses') {
+                $data['vehicle_expenses'] = $this->fleet_model->get_vehicle_expenses($id);
+
+                $this->load->model('currencies_model');
+                $base_currency = $this->currencies_model->get_base_currency();
+                $data['currency_name'] = '';
+                if (isset($base_currency)) {
+                    $data['currency_name'] = $base_currency->name;
+                }
             } elseif ($group == 'vault') {
                 $data['vault_entries'] = hooks()->apply_filters('check_vault_entries_visibility', $this->clients_model->get_vault_entries($id));
 
@@ -3023,6 +3034,12 @@ class Fleet extends AdminController
         $data['driver_vehicle_map'] = $this->fleet_model->get_booking_driver_vehicle_map($id);
         $data['delivery_note'] = $this->fleet_model->get_delivery_note_data($data['booking']);
 
+        $data['booking_expenses'] = $this->fleet_model->get_booking_expenses($data['booking']);
+        $data['expense_items'] = $this->fleet_model->get_expense_items();
+        $data['fuel_routes'] = $this->fleet_model->get_fuel_routes();
+        $data['expense_vehicles'] = $data['vehicles'];
+        $data['base_currency'] = get_base_currency();
+
         if ($data['booking']->invoice_id) {
             $this->load->model('invoices_model');
             $invoice = $this->invoices_model->get($data['booking']->invoice_id);
@@ -3213,9 +3230,118 @@ class Fleet extends AdminController
         }
         echo json_encode([
             'invoice_number' => $invoice_number,
+            'invoice_id' => $invoice_id,
             'message' => $message,
         ]);
         die();
+    }
+
+    /**
+     * add a booking expense (ajax)
+     * @param  integer $booking_id the booking id
+     * @return json
+     */
+    public function add_booking_expense($booking_id = '')
+    {
+        if (!has_permission('fleet_bookings', '', 'edit')) {
+            ajax_access_denied();
+        }
+
+        $booking = $this->fleet_model->get_booking($booking_id);
+
+        $expense_id = false;
+        if ($booking) {
+            $expense_id = $this->fleet_model->add_booking_expense($booking, [
+                'source' => $this->input->post('expense_item'),
+                'vehicle_id' => $this->input->post('vehicle_id'),
+                'amount' => $this->input->post('amount'),
+                'date' => $this->input->post('date'),
+                'note' => $this->input->post('note'),
+            ]);
+        }
+
+        if (!$expense_id) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('fleet_booking_expense_failed'),
+            ]);
+            die();
+        }
+
+        $this->load->model('currencies_model');
+        $currency = $this->currencies_model->get_base_currency();
+
+        $expense = $this->db->get_where(db_prefix() . 'expenses', ['id' => $expense_id])->row();
+
+        $vehicle_name = '';
+        if ($expense && !empty($expense->vehicle_id)) {
+            $vehicle = $this->fleet_model->get_vehicle($expense->vehicle_id);
+            if ($vehicle) {
+                $vehicle_name = $vehicle->name;
+            }
+        }
+
+        $total_expenses = 0;
+        foreach ($this->fleet_model->get_booking_expenses($booking) as $booking_expense) {
+            $total_expenses += $booking_expense['amount'];
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => _l('fleet_booking_expense_added'),
+            'expense' => [
+                'id' => (int) $expense_id,
+                'date' => $expense ? _d($expense->date) : '',
+                'description' => $expense ? $expense->expense_name : '',
+                'vehicle_name' => $vehicle_name,
+                'amount' => $expense ? (float) $expense->amount : 0,
+                'amount_formatted' => $expense ? app_format_money($expense->amount, $currency->name) : '',
+                'delete_url' => admin_url('fleet/delete_booking_expense/' . $expense_id),
+                'can_delete' => has_permission('fleet_bookings', '', 'delete'),
+            ],
+            'total_formatted' => app_format_money($total_expenses, $currency->name),
+        ]);
+        die();
+    }
+
+    /**
+     * delete a booking expense (linked through _delete GET link)
+     * @param  integer $id the expense id
+     */
+    public function delete_booking_expense($id)
+    {
+        if (!has_permission('fleet_bookings', '', 'delete')) {
+            access_denied('fleet_bookings');
+        }
+
+        $this->load->model('expenses_model');
+
+        $expense = $this->db->get_where(db_prefix() . 'expenses', ['id' => $id])->row();
+
+        $booking_id = 0;
+        $booking = null;
+        if ($expense && $expense->from_fleet == 1 && !empty($expense->reference_no)) {
+            $booking = $this->db->get_where(db_prefix() . 'fleet_bookings', ['number' => $expense->reference_no])->row();
+            if ($booking) {
+                $booking_id = $booking->id;
+            }
+        }
+
+        if ($expense && $booking) {
+            $deleted = $this->expenses_model->delete($id, true);
+            if ($deleted === true) {
+                set_alert('success', _l('deleted', _l('expense')));
+            } else {
+                set_alert('danger', _l('problem_deleting', _l('expense')));
+            }
+        } else {
+            set_alert('danger', _l('problem_deleting', _l('expense')));
+        }
+
+        if ($booking_id) {
+            redirect(admin_url('fleet/booking_detail/' . $booking_id));
+        }
+        redirect(admin_url('fleet/bookings'));
     }
 
     /**
@@ -7278,5 +7404,144 @@ class Fleet extends AdminController
         $data['title'] = _l('booking_summary_report');
         $data['vehicles'] = $this->fleet_model->get_vehicle();
         $this->load->view('reports/booking_summary', $data);
+    }
+
+    /**
+     * fuel routes table
+     * @return json
+     */
+    public function fuel_routes_table()
+    {
+        if ($this->input->is_ajax_request()) {
+
+            $select = [
+                'id',
+                'name',
+                'amount',
+                'addedfrom',
+                'datecreated',
+            ];
+
+            $where = [];
+
+            $aColumns = $select;
+            $sIndexColumn = 'id';
+            $sTable = db_prefix() . 'fleet_fuel_routes';
+            $join = [];
+            $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, []);
+
+            $output = $result['output'];
+            $rResult = $result['rResult'];
+
+            foreach ($rResult as $aRow) {
+                $row = [];
+
+                $row[] = $aRow['id'];
+
+                $categoryOutput = $aRow['name'];
+
+                $categoryOutput .= '<div class="row-options">';
+
+                if (has_permission('fleet_setting', '', 'edit')) {
+                    $categoryOutput .= '<a href="#" onclick="edit_fuel_route(' . $aRow['id'] . '); return false;">' . _l('edit') . '</a>';
+                }
+
+                if (has_permission('fleet_setting', '', 'delete')) {
+                    $categoryOutput .= ' | <a href="' . admin_url('fleet/delete_fuel_route/' . $aRow['id']) . '" class="text-danger _delete">' . _l('delete') . '</a>';
+                }
+
+                $categoryOutput .= '</div>';
+                $row[] = $categoryOutput;
+                $row[] = app_format_money($aRow['amount'], get_base_currency());
+                $row[] = get_staff_full_name($aRow['addedfrom']);
+                $row[] = _d($aRow['datecreated']);
+
+                $output['aaData'][] = $row;
+            }
+
+            echo json_encode($output);
+            die();
+        }
+    }
+
+    /**
+     *
+     *  add or edit fuel route
+     *  @return json
+     */
+    public function add_fuel_route()
+    {
+        if (!has_permission('fleet_setting', '', 'edit') && !has_permission('fleet_setting', '', 'create')) {
+            access_denied('fleet');
+        }
+
+        if ($this->input->post()) {
+            $data = [
+                'name'   => $this->input->post('name'),
+                'amount' => $this->input->post('amount'),
+            ];
+
+            $id = $this->input->post('id');
+            $message = '';
+            if ($id == '') {
+                if (!has_permission('fleet_setting', '', 'create')) {
+                    access_denied('fleet');
+                }
+                $success = $this->fleet_model->add_fuel_route($data);
+                if ($success) {
+                    $message = _l('added_successfully', _l('fuel_route'));
+                } else {
+                    $message = _l('add_failure');
+                }
+            } else {
+                if (!has_permission('fleet_setting', '', 'edit')) {
+                    access_denied('fleet');
+                }
+                $success = $this->fleet_model->update_fuel_route($data, $id);
+                if ($success) {
+                    $message = _l('updated_successfully', _l('fuel_route'));
+                } else {
+                    $message = _l('updated_fail');
+                }
+            }
+
+            echo json_encode(['success' => $success, 'message' => $message]);
+            die();
+        }
+    }
+
+    /**
+     * delete fuel route
+     * @param  integer $id
+     * @return
+     */
+    public function delete_fuel_route($id)
+    {
+        if (!has_permission('fleet_setting', '', 'delete')) {
+            access_denied('fleet_setting');
+        }
+        $success = $this->fleet_model->delete_fuel_route($id);
+        $message = '';
+
+        if ($success) {
+            $message = _l('deleted', _l('fuel_route'));
+            set_alert('success', $message);
+        } else {
+            $message = _l('can_not_delete');
+            set_alert('warning', $message);
+        }
+        redirect(admin_url('fleet/settings?group=fuel_routes'));
+    }
+
+    /**
+     * get data fuel route
+     * @param  integer $id
+     * @return json
+     */
+    public function fuel_route($id)
+    {
+        $fuel_route = $this->fleet_model->get_fuel_route($id);
+
+        echo json_encode($fuel_route);
     }
 }

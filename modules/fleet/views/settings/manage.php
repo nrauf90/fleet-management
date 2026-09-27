@@ -32,6 +32,8 @@
                     echo '<i class="fa fa-list-alt" aria-hidden="true"></i>';
                 }elseif ($gr == 'part_types') {
                     echo '<i class="fa fa-list-ul" aria-hidden="true"></i>';
+                }elseif ($gr == 'fuel_routes') {
+                    echo '<i class="fa fa-route" aria-hidden="true"></i>';
                 }   ?>
                 <?php echo _l($gr); ?>
               </a>

@@ -31,10 +31,10 @@ $can_view_invoice = has_permission('invoices', '', 'view');
                         onclick="create_invoice(<?php echo new_html_entity_decode($booking->id); ?>); return false;"
                         id="btn-create-invoice"
                         class="btn btn-success pull-right mright10"><?php echo _l('create_invoice'); ?></a>
-                    <?php } else { ?>
-                      <a href="<?php echo admin_url('invoices#' . $booking->invoice_id); ?>"
-                        class="btn pull-right"><?php echo _l('view_invoice'); ?></a>
                     <?php } ?>
+                    <a href="<?php echo admin_url('invoices#' . $booking->invoice_id); ?>"
+                      id="btn-view-invoice"
+                      class="btn pull-right<?php echo $booking->invoice_id > 0 ? '' : ' hide'; ?>"><?php echo _l('view_invoice'); ?></a>
                   </div>
                 </div>
               </div>
@@ -111,8 +111,8 @@ $can_view_invoice = has_permission('invoices', '', 'view');
                   <tbody>
                     <tr class="project-overview">
                       <td class="bold" width="30%"><?php echo _l('invoice'); ?></td>
-                      <td><a
-                          href="<?php echo admin_url('invoices/list_invoices/' . $booking->invoice_id) ?>"><?php echo format_invoice_number($booking->invoice_id); ?></a>
+                      <td><a id="invoice-number"
+                          href="<?php echo $booking->invoice_id ? admin_url('invoices#' . $booking->invoice_id) : '#'; ?>"><?php echo format_invoice_number($booking->invoice_id); ?></a>
                       </td>
                     </tr>
                     <?php if ($can_view_invoice) { ?>
@@ -461,6 +461,128 @@ $can_view_invoice = has_permission('invoices', '', 'view');
         </div>
       </div>
     </div>
+    <!-- Booking Expenses Section -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="panel_s">
+          <div class="panel-body">
+            <h4 class="h4-color"><?php echo _l('fleet_booking_expenses'); ?></h4>
+            <hr class="hr-color">
+            <?php if (has_permission('fleet_bookings', '', 'edit')) { ?>
+              <div class="row">
+                <div class="col-md-4">
+                  <label for="booking-expense-item" class="control-label"><?php echo _l('fleet_expense_item'); ?></label>
+                  <select id="booking-expense-item" class="selectpicker" data-width="100%"
+                    data-live-search="true" data-none-selected-text="<?php echo _l('fleet_expense_item'); ?>">
+                    <option value=""></option>
+                    <optgroup label="<?php echo _l('fleet_expense_items_group'); ?>">
+                      <?php foreach ($expense_items as $expense_item) { ?>
+                        <option value="item_<?php echo $expense_item['itemid']; ?>"
+                          data-amount="<?php echo $expense_item['rate']; ?>"
+                          data-name="<?php echo html_escape($expense_item['description']); ?>">
+                          <?php echo html_escape($expense_item['description']); ?>
+                        </option>
+                      <?php } ?>
+                    </optgroup>
+                    <optgroup label="<?php echo _l('fleet_fuel_routes_group'); ?>">
+                      <?php foreach ($fuel_routes as $fuel_route) { ?>
+                        <option value="fuel_<?php echo $fuel_route['id']; ?>"
+                          data-amount="<?php echo $fuel_route['amount']; ?>"
+                          data-name="<?php echo html_escape($fuel_route['name']); ?>">
+                          <?php echo html_escape($fuel_route['name']); ?>
+                        </option>
+                      <?php } ?>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="booking-expense-vehicle" class="control-label"><?php echo _l('vehicle'); ?></label>
+                  <select id="booking-expense-vehicle" class="selectpicker" data-width="100%"
+                    data-none-selected-text="<?php echo _l('vehicle'); ?>">
+                    <option value=""></option>
+                    <?php
+                    $default_expense_vehicle = isset($booking->vehicle_id) ? $booking->vehicle_id : '';
+                    foreach ($expense_vehicles as $expense_vehicle) { ?>
+                      <option value="<?php echo $expense_vehicle['id']; ?>"
+                        <?php echo ($default_expense_vehicle != '' && $default_expense_vehicle == $expense_vehicle['id']) ? 'selected' : ''; ?>>
+                        <?php echo html_escape($expense_vehicle['name']); ?>
+                      </option>
+                    <?php } ?>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <?php echo render_input('booking-expense-amount', 'amount', '', 'text', ['data-type' => 'currency']); ?>
+                </div>
+                <div class="col-md-3">
+                  <?php echo render_date_input('booking-expense-date', 'date', _d(date('Y-m-d'))); ?>
+                </div>
+                <div class="col-md-12">
+                  <?php echo render_textarea('booking-expense-note', 'fleet_expense_note', '', ['rows' => 1]); ?>
+                </div>
+              </div>
+              <div class="text-right mtop15">
+                <button type="button" class="btn btn-info" id="btn-add-booking-expense"
+                  onclick="add_booking_expense(<?php echo (int) $booking->id; ?>); return false;">
+                  <i class="fa fa-plus"></i> <?php echo _l('fleet_add_booking_expense'); ?>
+                </button>
+              </div>
+              <hr class="hr-color">
+            <?php } ?>
+            <?php
+            $booking_expenses_total = 0;
+            if (isset($booking_expenses) && count($booking_expenses) > 0) {
+                foreach ($booking_expenses as $booking_expense) {
+                    $booking_expenses_total += $booking_expense['amount'];
+                }
+            }
+            ?>
+            <div class="table-responsive">
+              <table class="table table-striped" id="booking-expenses-table">
+                <thead>
+                  <tr>
+                    <th><?php echo _l('date'); ?></th>
+                    <th><?php echo _l('description'); ?></th>
+                    <th><?php echo _l('vehicle'); ?></th>
+                    <th><?php echo _l('amount'); ?></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (isset($booking_expenses) && count($booking_expenses) > 0) { ?>
+                    <?php foreach ($booking_expenses as $booking_expense) { ?>
+                      <tr data-expense-id="<?php echo (int) $booking_expense['id']; ?>">
+                        <td><?php echo _d($booking_expense['date']); ?></td>
+                        <td><?php echo html_escape($booking_expense['expense_name']); ?></td>
+                        <td><?php echo html_escape(isset($booking_expense['vehicle_name']) ? $booking_expense['vehicle_name'] : ''); ?></td>
+                        <td class="expense-amount" data-amount="<?php echo $booking_expense['amount']; ?>">
+                          <?php echo app_format_money($booking_expense['amount'], $currency_name); ?>
+                        </td>
+                        <td>
+                          <?php if (has_permission('fleet_bookings', '', 'delete')) { ?>
+                            <a href="<?php echo admin_url('fleet/delete_booking_expense/' . $booking_expense['id']); ?>"
+                              class="btn btn-danger btn-icon _delete"><i class="fa fa-remove"></i></a>
+                          <?php } ?>
+                        </td>
+                      </tr>
+                    <?php } ?>
+                  <?php } ?>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="text-right bold"><?php echo _l('fleet_total_expenses'); ?></td>
+                    <td class="bold" id="booking-expenses-total"><?php echo app_format_money($booking_expenses_total, $currency_name); ?></td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p class="text-muted<?php echo (isset($booking_expenses) && count($booking_expenses) > 0) ? ' hide' : ''; ?>"
+              id="booking-expenses-empty"><?php echo _l('fleet_no_booking_expenses'); ?></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- End Booking Expenses Section -->
     <div class="modal fade" id="chosse" tabindex="-1" role="dialog">
       <div class="modal-dialog">
         <div class="modal-content">

@@ -297,6 +297,22 @@ class Fleet_model extends App_Model
     }
 
     /**
+     * get vehicle expenses
+     * @param  integer $vehicle_id
+     * @return array
+     */
+    public function get_vehicle_expenses($vehicle_id)
+    {
+        $this->db->select(db_prefix() . 'expenses.*, ' . db_prefix() . 'expenses_categories.name as category_name');
+        $this->db->from(db_prefix() . 'expenses');
+        $this->db->join(db_prefix() . 'expenses_categories', db_prefix() . 'expenses_categories.id = ' . db_prefix() . 'expenses.category', 'left');
+        $this->db->where(db_prefix() . 'expenses.vehicle_id', $vehicle_id);
+        $this->db->order_by(db_prefix() . 'expenses.date', 'desc');
+
+        return $this->db->get()->result_array();
+    }
+
+    /**
      * update vehicle
      * @param array $data
      * @param integer $id
@@ -721,6 +737,127 @@ class Fleet_model extends App_Model
         $fuel_history = $this->db->get(db_prefix() . 'fleet_fuel_history')->result_array();
 
         return $fuel_history;
+    }
+
+    /**
+     * get expenses linked to a booking (reference_no = booking number)
+     * @param  object $booking
+     * @return array
+     */
+    public function get_booking_expenses($booking)
+    {
+        if (!$booking || empty($booking->number)) {
+            return [];
+        }
+
+        $this->db->select(db_prefix() . 'expenses.*, ' . db_prefix() . 'fleet_vehicles.name as vehicle_name');
+        $this->db->join(db_prefix() . 'fleet_vehicles', db_prefix() . 'fleet_vehicles.id = ' . db_prefix() . 'expenses.vehicle_id', 'left');
+        $this->db->where(db_prefix() . 'expenses.reference_no', $booking->number);
+        $this->db->where(db_prefix() . 'expenses.from_fleet', 1);
+        $this->db->order_by(db_prefix() . 'expenses.date', 'desc');
+
+        return $this->db->get(db_prefix() . 'expenses')->result_array();
+    }
+
+    /**
+     * items for the booking expense picker
+     * @return array
+     */
+    public function get_expense_items()
+    {
+        $this->db->select(db_prefix() . 'items.id as itemid, description, rate');
+        $this->db->order_by('description', 'asc');
+
+        return $this->db->get(db_prefix() . 'items')->result_array();
+    }
+
+    /**
+     * expenses category for booking expenses (finds or creates "Fleet: Booking")
+     * @return integer|string
+     */
+    public function get_booking_expense_category_id()
+    {
+        $this->db->where('name', 'Fleet: Booking');
+        $category = $this->db->get(db_prefix() . 'expenses_categories')->row();
+        if ($category) {
+            return $category->id;
+        }
+
+        $this->db->insert(db_prefix() . 'expenses_categories', ['name' => 'Fleet: Booking']);
+        $insert_id = $this->db->insert_id();
+
+        return $insert_id ? $insert_id : '';
+    }
+
+    /**
+     * add a booking expense row to tblexpenses (after_expense_added fires for accounts sync)
+     * when the source is a fuel route and a vehicle is set, also logs fleet_fuel_history
+     * @param  object $booking the booking row
+     * @param  array  $data    keys: source, vehicle_id, amount, date, note
+     * @return integer|boolean expense id or false
+     */
+    public function add_booking_expense($booking, $data)
+    {
+        if (!$booking) {
+            return false;
+        }
+
+        $source = isset($data['source']) ? (string) $data['source'] : '';
+        $vehicle_id = !empty($data['vehicle_id']) ? (int) $data['vehicle_id'] : 0;
+        $amount = isset($data['amount']) ? (float) str_replace(',', '', (string) $data['amount']) : 0;
+        $date = isset($data['date']) && $data['date'] != '' ? $data['date'] : date('Y-m-d');
+        $note = isset($data['note']) ? trim((string) $data['note']) : '';
+
+        $expense_name = '';
+        $fuel_route = null;
+
+        if (strpos($source, 'item_') === 0) {
+            $item = $this->db->get_where(db_prefix() . 'items', ['id' => (int) substr($source, 5)])->row();
+            if ($item) {
+                $expense_name = $item->description;
+            }
+        } elseif (strpos($source, 'fuel_') === 0) {
+            $fuel_route = $this->get_fuel_route((int) substr($source, 5));
+            if ($fuel_route) {
+                $expense_name = $fuel_route->name;
+            }
+        }
+
+        if ($expense_name == '' || $amount <= 0) {
+            return false;
+        }
+
+        $this->load->model('expenses_model');
+        $this->load->model('currencies_model');
+        $base_currency = $this->currencies_model->get_base_currency();
+
+        $expense_id = $this->expenses_model->add([
+            'expense_name' => $expense_name,
+            'category' => $this->get_booking_expense_category_id(),
+            'amount' => $amount,
+            'date' => $date,
+            'note' => $note,
+            'reference_no' => $booking->number,
+            'vehicle_id' => $vehicle_id > 0 ? $vehicle_id : null,
+            'currency' => $base_currency->id,
+            'from_fleet' => 1,
+        ]);
+
+        if ($expense_id && $fuel_route && $vehicle_id > 0) {
+            $sql_date = to_sql_date($date);
+            $this->add_fuel_history([
+                'vehicle_id' => $vehicle_id,
+                'fuel_time' => ($sql_date ? $sql_date : date('Y-m-d')) . ' ' . date('H:i:s'),
+                'price' => $amount,
+                'fuel_type' => $fuel_route->name,
+                'reference' => $booking->number,
+                'notes' => $note,
+                'addedfrom' => get_staff_user_id(),
+                'datecreated' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return $expense_id;
     }
 
     /**
@@ -5059,5 +5196,67 @@ class Fleet_model extends App_Model
         $this->db->where('id', $id);
 
         return $this->db->get(db_prefix() . 'fleet_fuel_routes')->row();
+    }
+
+    /**
+     * add new fuel route
+     * @param array $data
+     * @return integer
+     */
+    public function add_fuel_route($data)
+    {
+        if (isset($data['id'])) {
+            unset($data['id']);
+        }
+
+        $data['datecreated'] = date('Y-m-d H:i:s');
+        $data['addedfrom'] = get_staff_user_id();
+
+        $this->db->insert(db_prefix() . 'fleet_fuel_routes', $data);
+
+        $insert_id = $this->db->insert_id();
+
+        if ($insert_id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * update fuel route
+     * @param array $data
+     * @param integer $id
+     * @return integer
+     */
+    public function update_fuel_route($data, $id)
+    {
+        if (isset($data['id'])) {
+            unset($data['id']);
+        }
+
+        $this->db->where('id', $id);
+        $this->db->update(db_prefix() . 'fleet_fuel_routes', $data);
+
+        if ($this->db->affected_rows() > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * delete fuel route
+     * @param integer $id
+     * @return boolean
+     */
+    public function delete_fuel_route($id)
+    {
+        $this->db->where('id', $id);
+        $this->db->delete(db_prefix() . 'fleet_fuel_routes');
+        if ($this->db->affected_rows() > 0) {
+            return true;
+        }
+        return false;
     }
 }
