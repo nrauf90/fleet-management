@@ -71,26 +71,16 @@ if (!$CI->db->field_exists('paymentmode', db_prefix() . 'account_transactions'))
 if (!$CI->db->field_exists('opening_balance_cash', db_prefix() . 'accounts_settings')) {
     $CI->db->query('ALTER TABLE `' . db_prefix() . "accounts_settings`
         ADD COLUMN `opening_balance_cash` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
-        ADD COLUMN `opening_balance_bank` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
-        ADD COLUMN `cash_payment_modes` TEXT NULL;
+        ADD COLUMN `opening_balance_bank` DECIMAL(15,2) NOT NULL DEFAULT 0.00;
     ");
 
     // Carry the legacy single opening balance into the cash account
     $CI->db->query('UPDATE `' . db_prefix() . 'accounts_settings` SET `opening_balance_cash` = `opening_balance`');
 }
 
-// Seed cash payment modes (modes named like "cash") when not configured yet
-$CI->db->where('id', 1);
-$__acc_settings = $CI->db->get(db_prefix() . 'accounts_settings')->row();
-if ($__acc_settings && $__acc_settings->cash_payment_modes === null) {
-    $__cash_ids = [];
-    foreach ($CI->db->get(db_prefix() . 'payment_modes')->result() as $__mode) {
-        if (stripos($__mode->name, 'cash') !== false) {
-            $__cash_ids[] = (string) $__mode->id;
-        }
-    }
-    $CI->db->where('id', 1);
-    $CI->db->update(db_prefix() . 'accounts_settings', ['cash_payment_modes' => implode(',', $__cash_ids)]);
+// Cash/bank account is derived from the payment mode name — the stored mapping is obsolete
+if ($CI->db->field_exists('cash_payment_modes', db_prefix() . 'accounts_settings')) {
+    $CI->db->query('ALTER TABLE `' . db_prefix() . 'accounts_settings` DROP COLUMN `cash_payment_modes`');
 }
 
 if (!$CI->db->field_exists('account', db_prefix() . 'account_transactions')) {
@@ -100,9 +90,12 @@ if (!$CI->db->field_exists('account', db_prefix() . 'account_transactions')) {
     ");
 
     // Reclassify synced rows: an explicit non-cash payment mode posts to bank
-    $CI->db->where('id', 1);
-    $__acc_settings = $CI->db->get(db_prefix() . 'accounts_settings')->row();
-    $__cash_modes = array_filter(array_map('trim', explode(',', (string) ($__acc_settings->cash_payment_modes ?? ''))));
+    $__cash_modes = [];
+    foreach ($CI->db->get(db_prefix() . 'payment_modes')->result() as $__mode) {
+        if (stripos($__mode->name, 'cash') !== false) {
+            $__cash_modes[] = (int) $__mode->id;
+        }
+    }
     if (!empty($__cash_modes)) {
         $CI->db->query('UPDATE `' . db_prefix() . "account_transactions`
             SET `account` = 'bank'

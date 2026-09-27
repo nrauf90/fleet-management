@@ -17,8 +17,8 @@ function accounts_is_configured()
 
 /**
  * Resolve which account (cash|bank) a transaction belongs to from its payment mode.
- * Modes selected in Accounts Settings as cash modes post to cash; any other
- * explicit mode posts to bank; no payment mode is treated as cash.
+ * A mode whose name contains "cash" posts to cash; any other explicit mode posts
+ * to bank; no payment mode is treated as cash.
  * @param  string|int|null $paymentmode
  * @return string
  */
@@ -30,11 +30,10 @@ function accounts_resolve_account($paymentmode)
     }
 
     $CI = &get_instance();
-    $CI->load->model('accounts/accounts_model');
-    $settings = $CI->accounts_model->get_settings();
-    $cash_modes = array_filter(array_map('trim', explode(',', (string) ($settings->cash_payment_modes ?? ''))));
+    $CI->db->where('id', $mode);
+    $payment_mode = $CI->db->get(db_prefix() . 'payment_modes')->row();
 
-    return in_array($mode, $cash_modes, true) ? 'cash' : 'bank';
+    return ($payment_mode && stripos($payment_mode->name, 'cash') !== false) ? 'cash' : 'bank';
 }
 
 /**

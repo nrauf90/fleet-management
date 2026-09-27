@@ -288,7 +288,7 @@ class Accounts extends AdminController
         $data['title'] = _l('accounts_settings');
         $data['settings'] = $settings;
         $data['currencies'] = $this->currencies_model->get();
-        $data['payment_modes'] = $this->db->get(db_prefix() . 'payment_modes')->result_array();
+        $data['balances_as_of'] = $this->accounts_model->get_balances_as_of(date('Y-m-d'));
         $data['base_currency'] = $this->resolve_currency($settings ? (int) $settings->currency : 0);
 
         // Daily balances filter (GET params in user date format)

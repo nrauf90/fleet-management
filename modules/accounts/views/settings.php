@@ -18,20 +18,19 @@
                             <div class="col-md-3">
                                 <?php
                                 $arrAtt = ['data-type' => 'currency'];
-                                $value = $settings ? $settings->opening_balance_cash : '';
+                                $value = isset($balances_as_of) ? number_format((float) $balances_as_of['cash'], 2, '.', '') : '';
                                 echo render_input('opening_balance_cash', 'accounts_opening_balance_cash', $value, 'text', $arrAtt);
                                 ?>
                             </div>
                             <div class="col-md-3">
                                 <?php
-                                $value = $settings ? $settings->opening_balance_bank : '';
+                                $value = isset($balances_as_of) ? number_format((float) $balances_as_of['bank'], 2, '.', '') : '';
                                 echo render_input('opening_balance_bank', 'accounts_opening_balance_bank', $value, 'text', $arrAtt);
                                 ?>
                             </div>
                             <div class="col-md-3">
                                 <?php
-                                $date_value = ($settings && $settings->opening_balance_date) ? _d($settings->opening_balance_date) : _d(date('Y-m-d'));
-                                echo render_date_input('opening_balance_date', 'accounts_opening_balance_date', $date_value);
+                                echo render_date_input('opening_balance_date', 'accounts_opening_balance_date', _d(date('Y-m-d')));
                                 ?>
                             </div>
                             <div class="col-md-3">
@@ -39,17 +38,6 @@
                                 $selected = $settings ? $settings->currency : '';
                                 echo render_select('currency', $currencies, ['id', 'name', 'symbol'], 'currency', $selected);
                                 ?>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <?php
-                                $selected_modes = ($settings && !empty($settings->cash_payment_modes))
-                                    ? array_filter(array_map('trim', explode(',', $settings->cash_payment_modes)))
-                                    : [];
-                                echo render_select('cash_payment_modes[]', $payment_modes, ['id', 'name'], 'accounts_cash_payment_modes', $selected_modes, ['multiple' => true, 'data-actions-box' => 'true', 'data-none-selected-text' => _l('dropdown_non_selected_tex')]);
-                                ?>
-                                <p class="text-muted"><?php echo _l('accounts_cash_payment_modes_help'); ?></p>
                             </div>
                         </div>
                         <div class="text-right">

@@ -27,16 +27,11 @@ class Accounts_model extends App_Model
      */
     public function save_settings($data)
     {
-        $cash_modes = isset($data['cash_payment_modes']) && is_array($data['cash_payment_modes'])
-            ? array_filter(array_map('intval', $data['cash_payment_modes']))
-            : [];
-
         $payload = [
             'opening_balance_cash' => (float) str_replace(',', '', (string) ($data['opening_balance_cash'] ?? 0)),
             'opening_balance_bank' => (float) str_replace(',', '', (string) ($data['opening_balance_bank'] ?? 0)),
             'opening_balance_date' => !empty($data['opening_balance_date']) ? to_sql_date($data['opening_balance_date']) : date('Y-m-d'),
             'currency'             => (int) ($data['currency'] ?? 0),
-            'cash_payment_modes'   => implode(',', $cash_modes),
             'is_configured'        => 1,
             'dateupdated'          => date('Y-m-d H:i:s'),
             'updated_by'           => get_staff_user_id(),
@@ -67,11 +62,12 @@ class Accounts_model extends App_Model
      */
     private function reclassify_synced_accounts()
     {
-        $settings = $this->get_settings();
-        $cash_modes = array_filter(array_map('trim', explode(',', (string) ($settings->cash_payment_modes ?? ''))));
-        $cash_modes = array_map(function ($m) {
-            return $this->db->escape_str($m);
-        }, $cash_modes);
+        $cash_modes = [];
+        foreach ($this->db->get(db_prefix() . 'payment_modes')->result() as $mode) {
+            if (stripos($mode->name, 'cash') !== false) {
+                $cash_modes[] = (int) $mode->id;
+            }
+        }
         $in = !empty($cash_modes) ? "'" . implode("','", $cash_modes) . "'" : "''";
 
         $this->db->query('UPDATE `' . db_prefix() . "account_transactions`
@@ -87,6 +83,7 @@ class Accounts_model extends App_Model
     {
         $settings = $this->get_settings();
         $configured = $settings && (int) $settings->is_configured === 1;
+        $opening_date = ($settings && !empty($settings->opening_balance_date)) ? $settings->opening_balance_date : null;
 
         $this->db->select("
             COALESCE(SUM(CASE WHEN account = 'cash' AND transaction_type = 'credit' THEN amount ELSE 0 END), 0) as cash_credits,
@@ -94,6 +91,9 @@ class Accounts_model extends App_Model
             COALESCE(SUM(CASE WHEN account = 'bank' AND transaction_type = 'credit' THEN amount ELSE 0 END), 0) as bank_credits,
             COALESCE(SUM(CASE WHEN account = 'bank' AND transaction_type = 'debit' THEN amount ELSE 0 END), 0) as bank_debits
         ", false);
+        if ($opening_date) {
+            $this->db->where('transaction_date >=', $opening_date);
+        }
         $totals = $this->db->get(db_prefix() . 'account_transactions')->row();
 
         $cash_opening  = $settings ? (float) ($settings->opening_balance_cash ?? $settings->opening_balance) : 0;
@@ -126,8 +126,8 @@ class Accounts_model extends App_Model
      * Per-day opening / credits / debits / closing balances for one account or both combined.
      * Every day from the opening balance date (or the filter's from date) through today
      * (or the filter's to date) is returned, newest first; days with no activity carry
-     * the balance forward. Transactions dated before the opening balance date fold into
-     * the first day's opening so the totals still match the current balance.
+     * the balance forward. Transactions dated before the opening balance date are
+     * excluded — the opening balances represent the actual balances on that date.
      * @param  string|null $account cash|bank|null (null = both)
      * @param  string|null $from    sql date, lower bound for listed days
      * @param  string|null $to      sql date, upper bound for listed days
@@ -177,7 +177,8 @@ class Accounts_model extends App_Model
             ];
         }
 
-        $balance = $base + $this->net_before($start, $account);
+        $opening_date = ($settings && !empty($settings->opening_balance_date)) ? $settings->opening_balance_date : null;
+        $balance = $base + $this->net_before($start, $account, $opening_date);
 
         $days = [];
         $current = strtotime($start);
@@ -213,7 +214,8 @@ class Accounts_model extends App_Model
     public function get_statement_data($from, $to, $account = null)
     {
         $settings = $this->get_settings();
-        $beginning = $this->opening_base_for_account($settings, $account) + $this->net_before($from, $account);
+        $opening_date = ($settings && !empty($settings->opening_balance_date)) ? $settings->opening_balance_date : null;
+        $beginning = $this->opening_base_for_account($settings, $account) + $this->net_before($from, $account, $opening_date);
 
         $this->db->where('transaction_date >=', $from);
         $this->db->where('transaction_date <=', $to);
@@ -272,21 +274,43 @@ class Accounts_model extends App_Model
     }
 
     /**
-     * Net movement (credits minus debits) strictly before a date.
+     * Net movement (credits minus debits) strictly before a date,
+     * optionally bounded below by $since (inclusive).
      * @param  string      $date    sql date
      * @param  string|null $account cash|bank|null
+     * @param  string|null $since   sql date lower bound (inclusive)
      * @return float
      */
-    private function net_before($date, $account = null)
+    private function net_before($date, $account = null, $since = null)
     {
         $this->db->select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END), 0) AS net", false);
         $this->db->where('transaction_date <', $date);
+        if ($since) {
+            $this->db->where('transaction_date >=', $since);
+        }
         if ($account) {
             $this->db->where('account', $account);
         }
         $row = $this->db->get(db_prefix() . 'account_transactions')->row();
 
         return $row ? (float) $row->net : 0.0;
+    }
+
+    /**
+     * Running cash/bank balances at the start of a date (that day's transactions excluded).
+     * Pre-fills the settings form so submitting re-baselines to the actual current balances.
+     * @param  string $date sql date
+     * @return array{cash: float, bank: float}
+     */
+    public function get_balances_as_of($date)
+    {
+        $settings = $this->get_settings();
+        $since = ($settings && !empty($settings->opening_balance_date)) ? $settings->opening_balance_date : null;
+
+        return [
+            'cash' => $this->opening_base_for_account($settings, 'cash') + $this->net_before($date, 'cash', $since),
+            'bank' => $this->opening_base_for_account($settings, 'bank') + $this->net_before($date, 'bank', $since),
+        ];
     }
 
     /**

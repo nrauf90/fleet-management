@@ -16,8 +16,6 @@ $lang['accounts_opening_balance_date'] = 'Opening Balance Date';
 $lang['accounts_cash'] = 'Cash';
 $lang['accounts_bank'] = 'Bank';
 $lang['accounts_account'] = 'Account';
-$lang['accounts_cash_payment_modes'] = 'Cash Payment Modes';
-$lang['accounts_cash_payment_modes_help'] = 'Invoice payments, expenses, and booking cash recorded with these payment modes post to the Cash account. Any other payment mode posts to Bank. Transactions without a payment mode are treated as Cash.';
 $lang['accounts_total_credits'] = 'Total Credits';
 $lang['accounts_total_debits'] = 'Total Debits';
 $lang['accounts_recent_transactions'] = 'Recent Transactions';
@@ -47,7 +45,7 @@ $lang['accounts_source_opening'] = 'Opening Balance';
 
 $lang['accounts_opening_balance_required'] = 'Opening balance is not set yet. Configure it before recording or syncing transactions.';
 $lang['accounts_go_to_settings'] = 'Go to Settings';
-$lang['accounts_opening_balance_help'] = 'Set your starting cash and bank balances at go-live. From that date onward, invoice payments (credit), expenses (debit), and manual transactions update the running balances. Changing an opening balance recalculates the current total.';
+$lang['accounts_opening_balance_help'] = 'Enter the cash and bank balances you actually hold on the opening balance date — it defaults to today. Payments (credit), expenses (debit), and manual transactions on or after that date update the running balances; earlier transactions are ignored.';
 
 $lang['accounts_transaction_add_failed'] = 'Could not add transaction. Check amount and type.';
 $lang['accounts_transaction_update_failed'] = 'Could not update transaction. Only manual transactions can be edited.';
