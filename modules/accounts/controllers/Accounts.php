@@ -64,6 +64,7 @@ class Accounts extends AdminController
             'transaction_date',
             'transaction_type',
             'account',
+            'is_alzarooni',
             'amount',
             'description',
             'source_type',
@@ -93,7 +94,9 @@ class Accounts extends AdminController
         if ($source && in_array($source, ['manual', 'payment', 'expense', 'logbook'], true)) {
             $where[] = 'AND source_type = "' . $this->db->escape_str($source) . '"';
         }
-        if ($account && in_array($account, ['cash', 'bank'], true)) {
+        if ($account === 'alzarooni') {
+            $where[] = 'AND is_alzarooni = 1';
+        } elseif ($account && in_array($account, ['cash', 'bank'], true)) {
             $where[] = 'AND account = "' . $this->db->escape_str($account) . '"';
         }
 
@@ -120,8 +123,14 @@ class Accounts extends AdminController
                 : '<span class="label label-danger">' . _l('accounts_debit') . '</span>';
             $row[] = $badge;
 
-            $account_label = $aRow['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_cash');
-            $row[] = '<span class="label label-default">' . e($account_label) . '</span>';
+            if (!empty($aRow['is_alzarooni'])) {
+                $settled = $aRow['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_cash');
+                $row[] = '<span class="label label-default">' . e(_l('accounts_alzarooni')) . '</span>'
+                    . '<div class="text-muted small">' . e($settled) . '</div>';
+            } else {
+                $account_label = $aRow['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_cash');
+                $row[] = '<span class="label label-default">' . e($account_label) . '</span>';
+            }
 
             $row[] = app_format_money($aRow['amount'], $currency);
 
@@ -200,6 +209,7 @@ class Accounts extends AdminController
             'id'               => (int) $tx->id,
             'transaction_type' => $tx->transaction_type,
             'account'          => $tx->account,
+            'is_alzarooni'     => !empty($tx->is_alzarooni) ? 1 : 0,
             'amount'           => (float) $tx->amount,
             'transaction_date' => _d($tx->transaction_date),
             'description'      => $tx->description,
@@ -329,7 +339,7 @@ class Accounts extends AdminController
         }
 
         $account = $this->input->get('account');
-        $account = in_array($account, ['cash', 'bank'], true) ? $account : null;
+        $account = in_array($account, ['cash', 'bank', 'alzarooni'], true) ? $account : null;
 
         $day = $this->input->get('date');
         if ($day && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {

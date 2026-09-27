@@ -16,7 +16,8 @@ $pdf->ln(10);
 $currency = $statement['currency'];
 $account_label = $statement['account'] === 'cash'
     ? _l('accounts_cash')
-    : ($statement['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_all_accounts'));
+    : ($statement['account'] === 'bank' ? _l('accounts_bank')
+        : ($statement['account'] === 'alzarooni' ? _l('accounts_alzarooni') : _l('accounts_all_accounts')));
 
 $summary = '';
 $summary .= '<h2>' . _l('accounts_statement') . '</h2>';
@@ -83,7 +84,9 @@ foreach ($statement['transactions'] as $tx) {
     $is_credit = $tx['transaction_type'] === 'credit';
     $running += $is_credit ? (float) $tx['amount'] : -(float) $tx['amount'];
 
-    $tx_account = !empty($tx['account']) && $tx['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_cash');
+    $tx_account = !empty($tx['is_alzarooni'])
+        ? _l('accounts_alzarooni')
+        : (!empty($tx['account']) && $tx['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_cash'));
 
     $details = e($tx['description']);
     if (!empty($tx['reference'])) {

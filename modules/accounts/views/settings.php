@@ -78,6 +78,10 @@
                                         <i class="fa fa-file-pdf"></i>
                                         <?php echo _l('accounts_download_statement'); ?>
                                     </button>
+                                    <button type="button" class="btn btn-default" id="alzarooni-download">
+                                        <i class="fa fa-file-pdf"></i>
+                                        <?php echo _l('accounts_download_alzarooni_statement'); ?>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -151,6 +155,12 @@
 
     $('#daily-download').on('click', function () {
         window.location.href = admin_url + 'accounts/statement?' + $.param(daily_filters());
+    });
+
+    $('#alzarooni-download').on('click', function () {
+        var params = daily_filters();
+        params.account = 'alzarooni';
+        window.location.href = admin_url + 'accounts/statement?' + $.param(params);
     });
 
     if (typeof appDataTableInline === 'function') {

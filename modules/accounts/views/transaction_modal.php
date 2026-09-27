@@ -26,6 +26,7 @@
                         echo render_select('account', [
                             ['id' => 'cash', 'name' => _l('accounts_cash')],
                             ['id' => 'bank', 'name' => _l('accounts_bank')],
+                            ['id' => 'alzarooni', 'name' => _l('accounts_alzarooni')],
                         ], ['id', 'name'], 'accounts_account', 'cash');
                         ?>
                     </div>
@@ -34,6 +35,19 @@
                         $arrAtt = ['data-type' => 'currency'];
                         echo render_input('amount', 'accounts_amount', '', 'text', $arrAtt);
                         ?>
+                    </div>
+                </div>
+                <div class="row alzarooni-payment-row hide">
+                    <div class="col-md-4">
+                        <?php
+                        echo render_select('alzarooni_account', [
+                            ['id' => 'cash', 'name' => _l('accounts_cash')],
+                            ['id' => 'bank', 'name' => _l('accounts_bank')],
+                        ], ['id', 'name'], 'payment_mode', 'cash');
+                        ?>
+                    </div>
+                    <div class="col-md-8">
+                        <p class="text-muted mtop25"><?php echo _l('accounts_alzarooni_help'); ?></p>
                     </div>
                 </div>
                 <div class="row">

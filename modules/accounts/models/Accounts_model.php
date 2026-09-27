@@ -208,19 +208,28 @@ class Accounts_model extends App_Model
      * Statement data for a date range: beginning balance, transactions, totals.
      * @param  string      $from    sql date
      * @param  string      $to      sql date
-     * @param  string|null $account cash|bank|null (null = both)
+     * @param  string|null $account cash|bank|alzarooni|null (null = both)
      * @return array
      */
     public function get_statement_data($from, $to, $account = null)
     {
+        $alzarooni_only = $account === 'alzarooni';
+        $account_filter = $alzarooni_only ? null : $account;
+
         $settings = $this->get_settings();
         $opening_date = ($settings && !empty($settings->opening_balance_date)) ? $settings->opening_balance_date : null;
-        $beginning = $this->opening_base_for_account($settings, $account) + $this->net_before($from, $account, $opening_date);
+        if ($alzarooni_only) {
+            $beginning = $this->net_before($from, null, $opening_date, true);
+        } else {
+            $beginning = $this->opening_base_for_account($settings, $account_filter) + $this->net_before($from, $account_filter, $opening_date);
+        }
 
         $this->db->where('transaction_date >=', $from);
         $this->db->where('transaction_date <=', $to);
-        if ($account) {
-            $this->db->where('account', $account);
+        if ($alzarooni_only) {
+            $this->db->where('is_alzarooni', 1);
+        } elseif ($account_filter) {
+            $this->db->where('account', $account_filter);
         }
         $this->db->order_by('transaction_date', 'asc');
         $this->db->order_by('id', 'asc');
@@ -276,12 +285,13 @@ class Accounts_model extends App_Model
     /**
      * Net movement (credits minus debits) strictly before a date,
      * optionally bounded below by $since (inclusive).
-     * @param  string      $date    sql date
-     * @param  string|null $account cash|bank|null
-     * @param  string|null $since   sql date lower bound (inclusive)
+     * @param  string      $date          sql date
+     * @param  string|null $account       cash|bank|null
+     * @param  string|null $since         sql date lower bound (inclusive)
+     * @param  bool        $alzarooni_only restrict to Al Zarooni transactions
      * @return float
      */
-    private function net_before($date, $account = null, $since = null)
+    private function net_before($date, $account = null, $since = null, $alzarooni_only = false)
     {
         $this->db->select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END), 0) AS net", false);
         $this->db->where('transaction_date <', $date);
@@ -290,6 +300,9 @@ class Accounts_model extends App_Model
         }
         if ($account) {
             $this->db->where('account', $account);
+        }
+        if ($alzarooni_only) {
+            $this->db->where('is_alzarooni', 1);
         }
         $row = $this->db->get(db_prefix() . 'account_transactions')->row();
 
@@ -512,9 +525,21 @@ class Accounts_model extends App_Model
 
         $date = !empty($data['transaction_date']) ? to_sql_date($data['transaction_date']) : date('Y-m-d');
 
+        $account = $data['account'] ?? '';
+        $is_alzarooni = $account === 'alzarooni';
+        if ($is_alzarooni) {
+            $account = in_array(($data['alzarooni_account'] ?? ''), ['cash', 'bank'], true)
+                ? $data['alzarooni_account']
+                : 'cash';
+        }
+        if (!in_array($account, ['cash', 'bank'], true)) {
+            $account = 'cash';
+        }
+
         return [
             'transaction_type' => $type,
-            'account'          => in_array(($data['account'] ?? ''), ['cash', 'bank'], true) ? $data['account'] : 'cash',
+            'account'          => $account,
+            'is_alzarooni'     => $is_alzarooni ? 1 : 0,
             'amount'           => $amount,
             'transaction_date' => $date,
             'description'      => isset($data['description']) ? $data['description'] : '',

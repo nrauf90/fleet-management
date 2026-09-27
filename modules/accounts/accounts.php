@@ -11,7 +11,7 @@ Author: FMS System
 */
 
 define('ACCOUNTS_MODULE_NAME', 'accounts');
-define('ACCOUNTS_REVISION', 102);
+define('ACCOUNTS_REVISION', 103);
 
 hooks()->add_action('admin_init', 'accounts_permissions');
 hooks()->add_action('admin_init', 'accounts_module_init_menu_items');

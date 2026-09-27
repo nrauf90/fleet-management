@@ -125,3 +125,11 @@ if (!$CI->db->field_exists('payee_type', db_prefix() . 'expenses')) {
         ADD COLUMN `payee_id` INT(11) NULL DEFAULT NULL;
     ");
 }
+
+// Al Zarooni transactions keep account = cash|bank (the settlement account) and are flagged here
+if (!$CI->db->field_exists('is_alzarooni', db_prefix() . 'account_transactions')) {
+    $CI->db->query('ALTER TABLE `' . db_prefix() . "account_transactions`
+        ADD COLUMN `is_alzarooni` TINYINT(1) NOT NULL DEFAULT 0,
+        ADD KEY `is_alzarooni` (`is_alzarooni`);
+    ");
+}

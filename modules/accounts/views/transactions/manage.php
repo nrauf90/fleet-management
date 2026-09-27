@@ -40,6 +40,7 @@
                                 echo render_select('account_filter', [
                                     ['id' => 'cash', 'name' => _l('accounts_cash')],
                                     ['id' => 'bank', 'name' => _l('accounts_bank')],
+                                    ['id' => 'alzarooni', 'name' => _l('accounts_alzarooni')],
                                 ], ['id', 'name'], 'accounts_account');
                                 ?>
                             </div>
