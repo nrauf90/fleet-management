@@ -815,3 +815,22 @@ if (!$CI->db->table_exists(db_prefix() . 'fleet_delivery_note_items')) {
 if (!$CI->db->field_exists('delivery_note_data', db_prefix() . 'fleet_bookings')) {
     $CI->db->query('ALTER TABLE `' . db_prefix() . "fleet_bookings` ADD COLUMN `delivery_note_data` TEXT NULL DEFAULT NULL");
 }
+
+// Vehicle-linked expenses + predefined fuel routes for booking expenses
+if (!$CI->db->field_exists('vehicle_id', db_prefix() . 'expenses')) {
+    $CI->db->query('ALTER TABLE `' . db_prefix() . 'expenses`
+        ADD COLUMN `vehicle_id` INT(11) NULL DEFAULT NULL,
+        ADD KEY `vehicle_id` (`vehicle_id`);
+    ');
+}
+
+if (!$CI->db->table_exists(db_prefix() . 'fleet_fuel_routes')) {
+    $CI->db->query('CREATE TABLE ' . db_prefix() . "fleet_fuel_routes (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `name` VARCHAR(191) NOT NULL,
+      `amount` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+      `addedfrom` INT(11) NULL,
+      `datecreated` DATETIME NULL,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
+}

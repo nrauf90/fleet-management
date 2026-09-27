@@ -5035,4 +5035,29 @@ class Fleet_model extends App_Model
 
         return $summary;
     }
+
+    /**
+     * Fuel route presets (admin-managed amount per route/destination)
+     * @param  array $where
+     * @return array
+     */
+    public function get_fuel_routes($where = [])
+    {
+        $this->db->where($where);
+        $this->db->order_by('name', 'asc');
+
+        return $this->db->get(db_prefix() . 'fleet_fuel_routes')->result_array();
+    }
+
+    /**
+     * Single fuel route preset
+     * @param  int $id
+     * @return object|null
+     */
+    public function get_fuel_route($id)
+    {
+        $this->db->where('id', $id);
+
+        return $this->db->get(db_prefix() . 'fleet_fuel_routes')->row();
+    }
 }

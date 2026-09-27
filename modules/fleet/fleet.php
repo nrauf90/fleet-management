@@ -72,6 +72,11 @@ hooks()->add_action('after_invoice_deleted', 'fleet_on_invoice_deleted');
 
 hooks()->add_action('after_render_invoice_template', 'fleet_invoice_importer_exporter_form_fields');
 
+// Vehicle selector on the expense form
+hooks()->add_action('before_expense_form_name', 'fleet_expense_vehicle_field');
+hooks()->add_filter('before_expense_added', 'fleet_prepare_expense_vehicle');
+hooks()->add_filter('before_expense_updated', 'fleet_prepare_expense_vehicle_update', 10, 2);
+
 
 
 /**
@@ -1476,5 +1481,50 @@ function fleet_predeactivate($module_name)
 
     }
 
+}
+
+
+/**
+ * Render the vehicle picker on the expense form.
+ * Hooked to before_expense_form_name.
+ * @param  object|null $expense
+ * @return void
+ */
+function fleet_expense_vehicle_field($expense = null)
+{
+    $CI = &get_instance();
+    $CI->load->model(FLEET_MODULE_NAME . '/fleet_model');
+
+    $selected = ($expense && !empty($expense->vehicle_id)) ? (int) $expense->vehicle_id : '';
+    echo render_select('fleet_vehicle', $CI->fleet_model->get_vehicle(), ['id', 'name'], 'vehicle', $selected);
+}
+
+/**
+ * Map the vehicle picker value onto expenses.vehicle_id before write.
+ * The expenses model inserts the post array directly, so 'fleet_vehicle' must not survive.
+ * @param  array $data
+ * @return array
+ */
+function fleet_prepare_expense_vehicle($data)
+{
+    if (!array_key_exists('fleet_vehicle', $data)) {
+        return $data;
+    }
+
+    $data['vehicle_id'] = !empty($data['fleet_vehicle']) ? (int) $data['fleet_vehicle'] : null;
+    unset($data['fleet_vehicle']);
+
+    return $data;
+}
+
+/**
+ * before_expense_updated passes the row id as a second argument.
+ * @param  array    $data
+ * @param  int|null $id
+ * @return array
+ */
+function fleet_prepare_expense_vehicle_update($data, $id = null)
+{
+    return fleet_prepare_expense_vehicle($data);
 }
 
