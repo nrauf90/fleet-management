@@ -152,6 +152,12 @@ $can_view_invoice = has_permission('invoices', '', 'view');
                         $total_invoice_items += $item['rate'] * $item['qty'];
                       }
                     }
+                    $total_booking_expenses = 0;
+                    if (isset($booking_expenses) && count($booking_expenses) > 0) {
+                      foreach ($booking_expenses as $summary_expense) {
+                        $total_booking_expenses += $summary_expense['amount'];
+                      }
+                    }
                     ?>
                     <tr class="project-overview">
                       <td class="bold" width="30%"><?php echo _l('Total Invoice Items'); ?></td>
@@ -166,13 +172,17 @@ $can_view_invoice = has_permission('invoices', '', 'view');
                       <td><span class="text-danger">-<?php echo app_format_money($total_rented_cash, ''); ?></span></td>
                     </tr>
                     <tr class="project-overview">
+                      <td class="bold" width="30%"><?php echo _l('fleet_total_booking_expenses'); ?></td>
+                      <td><span class="text-danger" id="summary-total-expenses">-<?php echo app_format_money($total_booking_expenses, ''); ?></span></td>
+                    </tr>
+                    <tr class="project-overview">
                       <td class="bold" width="30%"><?php echo _l('Profit/Loss'); ?></td>
                       <td>
                         <?php
-                        $profit_loss = $total_invoice_items - $total_used_cash - $total_rented_cash;
+                        $profit_loss = $total_invoice_items - $total_used_cash - $total_rented_cash - $total_booking_expenses;
                         $profit_loss_class = $profit_loss >= 0 ? 'text-success' : 'text-danger';
                         ?>
-                        <span class="<?php echo $profit_loss_class; ?>">
+                        <span class="<?php echo $profit_loss_class; ?>" id="summary-profit-loss">
                           <?php echo app_format_money($profit_loss, ''); ?>
                         </span>
                       </td>

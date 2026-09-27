@@ -827,6 +827,10 @@ class Fleet_model extends App_Model
             return false;
         }
 
+        if ($fuel_route && $vehicle_id <= 0) {
+            return false;
+        }
+
         $this->load->model('expenses_model');
         $this->load->model('currencies_model');
         $base_currency = $this->currencies_model->get_base_currency();
@@ -843,15 +847,16 @@ class Fleet_model extends App_Model
             'from_fleet' => 1,
         ]);
 
-        if ($expense_id && $fuel_route && $vehicle_id > 0) {
-            $sql_date = to_sql_date($date);
+        if ($expense_id && $fuel_route) {
             $this->add_fuel_history([
                 'vehicle_id' => $vehicle_id,
-                'fuel_time' => ($sql_date ? $sql_date : date('Y-m-d')) . ' ' . date('H:i:s'),
+                'fuel_time' => date('Y-m-d H:i:s'),
+                'odometer' => 0,
+                'gallons' => 0,
                 'price' => $amount,
                 'fuel_type' => $fuel_route->name,
                 'reference' => $booking->number,
-                'notes' => $note,
+                'notes' => $fuel_route->name,
                 'addedfrom' => get_staff_user_id(),
                 'datecreated' => date('Y-m-d H:i:s'),
             ]);

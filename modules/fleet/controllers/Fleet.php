@@ -3249,10 +3249,20 @@ class Fleet extends AdminController
 
         $booking = $this->fleet_model->get_booking($booking_id);
 
+        $expense_item = (string) $this->input->post('expense_item');
+
+        if (strpos($expense_item, 'fuel_') === 0 && !$this->input->post('vehicle_id')) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('fleet_booking_expense_vehicle_required'),
+            ]);
+            die();
+        }
+
         $expense_id = false;
         if ($booking) {
             $expense_id = $this->fleet_model->add_booking_expense($booking, [
-                'source' => $this->input->post('expense_item'),
+                'source' => $expense_item,
                 'vehicle_id' => $this->input->post('vehicle_id'),
                 'amount' => $this->input->post('amount'),
                 'date' => $this->input->post('date'),
@@ -3286,6 +3296,22 @@ class Fleet extends AdminController
             $total_expenses += $booking_expense['amount'];
         }
 
+        $total_invoice_items = 0;
+        if ($booking->invoice_id) {
+            foreach (get_items_by_type('invoice', $booking->invoice_id) as $invoice_item) {
+                $total_invoice_items += $invoice_item['rate'] * $invoice_item['qty'];
+            }
+        }
+
+        $this->db->select_sum('used_cash');
+        $this->db->where('booking_id', $booking_id);
+        $used_cash = $this->db->get(db_prefix() . 'fleet_logbooks')->row()->used_cash;
+        $this->db->select_sum('total_cash');
+        $this->db->where('booking_id', $booking_id);
+        $rented_cash = $this->db->get(db_prefix() . 'fleet_logbooks')->row()->total_cash;
+
+        $profit_loss = $total_invoice_items - (float) $used_cash - (float) $rented_cash - $total_expenses;
+
         echo json_encode([
             'success' => true,
             'message' => _l('fleet_booking_expense_added'),
@@ -3300,6 +3326,9 @@ class Fleet extends AdminController
                 'can_delete' => has_permission('fleet_bookings', '', 'delete'),
             ],
             'total_formatted' => app_format_money($total_expenses, $currency->name),
+            'summary_expenses_formatted' => app_format_money($total_expenses, ''),
+            'profit_loss_formatted' => app_format_money($profit_loss, ''),
+            'profit_loss_class' => $profit_loss >= 0 ? 'text-success' : 'text-danger',
         ]);
         die();
     }

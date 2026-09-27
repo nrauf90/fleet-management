@@ -241,6 +241,10 @@ function add_booking_expense(booking_id) {
     alert_float('warning', $('#booking-expense-item').data('none-selected-text') || 'Select an item');
     return;
   }
+  if (source.indexOf('fuel_') === 0 && !$('#booking-expense-vehicle').val()) {
+    alert_float('warning', 'Select a vehicle for fuel expenses');
+    return;
+  }
 
   var $btn = $('#btn-add-booking-expense');
   $btn.prop('disabled', true);
@@ -257,6 +261,13 @@ function add_booking_expense(booking_id) {
       alert_float('success', response.message);
       append_booking_expense_row(response.expense);
       $('#booking-expenses-total').text(response.total_formatted);
+      if (response.profit_loss_formatted) {
+        $('#summary-total-expenses').text('-' + response.summary_expenses_formatted);
+        $('#summary-profit-loss')
+          .text(response.profit_loss_formatted)
+          .removeClass('text-success text-danger')
+          .addClass(response.profit_loss_class);
+      }
       $('#booking-expenses-empty').addClass('hide');
       $('#booking-expense-item').selectpicker('val', '');
       $('#booking-expense-amount').val('');
