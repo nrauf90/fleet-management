@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FMS Module Map — Perfex CRM",
+    "output": ".archify/architecture-fms-modules-20260930-230252/fms-modules.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/nrauf90/fleet-management.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "f2f065d2841e05286587ddf8218a424a56c46e9d"
+    }
+  },
+  "components": [
+    {
+      "id": "menu_setup",
+      "type": "backend",
+      "label": "menu_setup",
+      "sublabel": "sidebar/setup menu reshuffle",
+      "pos": [30, 80],
+      "size": [130, 64],
+      "sources": [
+        { "path": "modules/menu_setup/menu_setup.php", "line": 16, "end_line": 22, "label": "menu filters" }
+      ]
+    },
+    {
+      "id": "theme_style",
+      "type": "backend",
+      "label": "theme_style",
+      "sublabel": "admin/client CSS theming",
+      "pos": [190, 80],
+      "size": [130, 64],
+      "sources": [
+        { "path": "modules/theme_style/theme_style.php", "line": 39, "end_line": 45, "label": "head hooks" }
+      ]
+    },
+    {
+      "id": "backup",
+      "type": "backend",
+      "label": "backup",
+      "sublabel": "DB backup on cron",
+      "pos": [350, 80],
+      "size": [130, 64],
+      "sources": [
+        { "path": "modules/backup/backup.php", "line": 21, "end_line": 27, "label": "after_cron_run" }
+      ]
+    },
+    {
+      "id": "exports",
+      "type": "backend",
+      "label": "exports",
+      "sublabel": "CSV export manager",
+      "pos": [510, 80],
+      "size": [130, 64],
+      "sources": [
+        { "path": "modules/exports/exports.php", "line": 12, "end_line": 13, "label": "menu registration" }
+      ]
+    },
+    {
+      "id": "surveys",
+      "type": "backend",
+      "label": "surveys",
+      "sublabel": "mail surveys on cron",
+      "pos": [680, 80],
+      "size": [130, 64],
+      "sources": [
+        { "path": "modules/surveys/surveys.php", "line": 16, "end_line": 27, "label": "cron + search hooks" }
+      ]
+    },
+    {
+      "id": "goals",
+      "type": "backend",
+      "label": "goals",
+      "sublabel": "staff goals + notify",
+      "pos": [840, 80],
+      "size": [130, 64],
+      "sources": [
+        { "path": "modules/goals/goals.php", "line": 14, "end_line": 22, "label": "cron + dashboard" }
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Perfex core",
+      "sublabel": "admin_init hooks · MX loader",
+      "pos": [430, 240],
+      "size": [220, 64],
+      "sources": [
+        { "path": "application/config/routes.php", "line": 167, "end_line": 171, "label": "module routing" }
+      ]
+    },
+    {
+      "id": "salary",
+      "type": "backend",
+      "label": "salary",
+      "sublabel": "payroll + advances",
+      "pos": [120, 400],
+      "size": [150, 64],
+      "sources": [
+        { "path": "modules/salary/salary.php", "line": 17, "end_line": 18, "label": "menus/permissions" }
+      ]
+    },
+    {
+      "id": "fleet",
+      "type": "backend",
+      "label": "fleet",
+      "sublabel": "bookings · vehicles · logbooks",
+      "pos": [400, 400],
+      "size": [170, 64],
+      "sources": [
+        { "path": "modules/fleet/fleet.php", "line": 33, "end_line": 49, "label": "hook registration" },
+        { "path": "modules/fleet/controllers/Fleet.php", "line": 3160, "label": "loads salary_model" }
+      ]
+    },
+    {
+      "id": "accounts",
+      "type": "backend",
+      "label": "accounts",
+      "sublabel": "ledger sync from payments/expenses",
+      "pos": [690, 400],
+      "size": [170, 64],
+      "sources": [
+        { "path": "modules/accounts/accounts.php", "line": 16, "end_line": 28, "label": "payment/expense hooks" },
+        { "path": "modules/accounts/helpers/accounts_helper.php", "line": 158, "end_line": 177, "label": "reads fleet_logbooks" }
+      ]
+    },
+    {
+      "id": "hrm",
+      "type": "backend",
+      "label": "hrm",
+      "sublabel": "HR records · payroll",
+      "pos": [960, 400],
+      "size": [140, 64],
+      "sources": [
+        { "path": "modules/hrm/hrm.php", "line": 18, "end_line": 21, "label": "menus/permissions" },
+        { "path": "modules/hrm/models/Hrm_model.php", "line": 1744, "label": "loads goals_model" }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "MariaDB",
+      "sublabel": "per-module table prefixes",
+      "pos": [430, 560],
+      "size": [200, 64],
+      "sources": [
+        { "path": "application/config/database.php", "line": 89, "end_line": 93, "label": "mysqli" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Utility & UI modules",
+      "wraps": ["menu_setup", "theme_style", "backup", "exports", "surveys", "goals"]
+    },
+    {
+      "kind": "region",
+      "label": "Business modules",
+      "wraps": ["salary", "fleet", "accounts", "hrm"]
+    },
+    {
+      "kind": "security-group",
+      "label": "One PHP process — modules share the request, no service isolation",
+      "wraps": ["core", "menu_setup", "theme_style", "backup", "exports", "surveys", "goals", "salary", "fleet", "accounts", "hrm"]
+    }
+  ],
+  "connections": [
+    { "id": "menu-to-core", "from": "menu_setup", "to": "core", "fromSide": "bottom", "toSide": "top" },
+    { "id": "theme-to-core", "from": "theme_style", "to": "core", "fromSide": "bottom", "toSide": "top" },
+    { "id": "backup-to-core", "from": "backup", "to": "core", "fromSide": "bottom", "toSide": "top" },
+    { "id": "exports-to-core", "from": "exports", "to": "core", "fromSide": "bottom", "toSide": "top" },
+    { "id": "surveys-to-core", "from": "surveys", "to": "core", "fromSide": "bottom", "toSide": "top" },
+    { "id": "goals-to-core", "from": "goals", "to": "core", "fromSide": "bottom", "toSide": "top" },
+    { "id": "salary-to-core", "from": "salary", "to": "core", "fromSide": "top", "toSide": "bottom" },
+    { "id": "fleet-to-core", "from": "fleet", "to": "core", "fromSide": "top", "toSide": "bottom" },
+    { "id": "accounts-to-core", "from": "accounts", "to": "core", "fromSide": "top", "toSide": "bottom" },
+    { "id": "hrm-to-core", "from": "hrm", "to": "core", "fromSide": "top", "toSide": "bottom" },
+    { "id": "fleet-to-salary", "from": "fleet", "to": "salary", "label": "advance salary", "variant": "dashed", "fromSide": "left", "toSide": "right" },
+    { "id": "accounts-to-fleet", "from": "accounts", "to": "fleet", "label": "reads logbooks", "variant": "dashed", "fromSide": "left", "toSide": "right" },
+    { "id": "hrm-to-goals", "from": "hrm", "to": "goals", "label": "goals_model", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "salary-to-db", "from": "salary", "to": "db", "label": "salary_*", "fromSide": "bottom", "toSide": "top" },
+    { "id": "fleet-to-db", "from": "fleet", "to": "db", "label": "fleet_*", "fromSide": "bottom", "toSide": "top" },
+    { "id": "accounts-to-db", "from": "accounts", "to": "db", "label": "acc_* + sync", "fromSide": "bottom", "toSide": "top" },
+    { "id": "hrm-to-db", "from": "hrm", "to": "db", "label": "hrm_*", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "How modules attach",
+      "items": [
+        "Each module ships modules/<name>/<name>.php that registers hooks at admin_init",
+        "Hooks wire menus, staff permissions, head/footer assets and cron callbacks",
+        "MX loader routes admin/<module>/<method> to the module's controllers"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Cross-module calls",
+      "items": [
+        "fleet adjust_cash loads salary/salary_model to post driver advances",
+        "accounts resolves cash-out from fleet_logbooks rows (hand/total/paid cash)",
+        "hrm loads goals/goals_model inside its model layer"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Core event listeners",
+      "items": [
+        "accounts subscribes to after_payment_added/updated/deleted + expense events",
+        "fleet filters invoice PDF/HTML renderers for drivers, importer, exporter",
+        "goals and surveys join global search and dashboard widgets"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cron participation",
+      "items": [
+        "backup, fleet, goals and surveys register after_cron_run work",
+        "fleet uses it for vehicle inspection schedules; backup for DB dumps"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Isolation reality",
+      "items": [
+        "All modules run in one PHP process and share the request lifecycle",
+        "One MariaDB holds every module's tables — no per-module schemas",
+        "A module bug or hook misfire can break unrelated admin pages"
+      ]
+    }
+  ]
+}

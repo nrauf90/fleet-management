@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\Personal\\fms\\.archify\\architecture-fms-runtime-20260930-224947\\candidate.json",
+    "sha256": "78f1c3f27495e28c6d3bcac29c0f4e9f89c265318500e265e5e7fbf4e2424629",
+    "bytes": 7732
+  },
+  "artifact": {
+    "path": "E:\\Personal\\fms\\.archify\\architecture-fms-runtime-20260930-224947\\fms-runtime.html",
+    "sha256": "57fe61b236fa6cc5bc20a37c1d11d3b09aeadf88fa46261147a3fd55d7b75bf8",
+    "bytes": 771182
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\Personal\\fms\\.archify\\architecture-fms-runtime-20260930-224947\\fms-runtime.finalize.json",
+    "summaryReceipt": "E:\\Personal\\fms\\.archify\\architecture-fms-runtime-20260930-224947\\fms-runtime.finalize-summary.json",
+    "browserCheckReceipt": "E:\\Personal\\fms\\.archify\\architecture-fms-runtime-20260930-224947\\fms-runtime.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-09-30T17:50:12.684Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2587,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "cron-to-core",
+            "from": "cron",
+            "to": "core",
+            "label": "key-gated",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "bends": 4,
+          "stretch": 1.276
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "cron → core needs 4 bends: move node cron or core so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  },
+  "layoutReviewRecommendation": {
+    "action": "inspect-leading-space",
+    "evidence": {
+      "measured": true,
+      "emptyTopPx": 140,
+      "emptyTopRatio": 0.225,
+      "occupiedTop": 140,
+      "viewBoxTop": 0,
+      "canvasHeight": 622,
+      "typicalNodeHeight": 64,
+      "reviewSuggested": true
+    },
+    "reason": "Measured content, including routes and labels, leaves a large empty area above the diagram. This is a composition suggestion, not a failed gate.",
+    "repair": "Check whether that leading space is intentional. If not, reposition the connected scene nearer the canvas origin while retaining room for its actual boundaries, labels and return routes. Preserve all meaning and user-fixed geometry, then rerun finalize. No screenshot is required."
+  }
+}

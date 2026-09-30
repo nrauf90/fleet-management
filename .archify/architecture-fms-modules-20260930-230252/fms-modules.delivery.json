@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "644ce1f0-9040-46b7-981f-deff159f8900",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "E:\\Personal\\fms\\.archify\\architecture-fms-modules-20260930-230252\\candidate.json",
+  "output": "E:\\Personal\\fms\\.archify\\architecture-fms-modules-20260930-230252\\fms-modules.html",
+  "specification": {
+    "sha256": "2546a159db8210ba0e112f16c0ac4c944c12d7f3fabd7dfd2cf666bfd52e2911",
+    "bytes": 8983
+  },
+  "artifact": {
+    "sha256": "da3e6e31e8d8f5a0c09f910710ff03c31f0ef034605bafb01500560618446b43",
+    "bytes": 778241
+  }
+}

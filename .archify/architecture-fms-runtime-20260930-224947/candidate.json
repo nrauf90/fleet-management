@@ -1,0 +1,425 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FMS Runtime Architecture",
+    "output": ".archify/architecture-fms-runtime-20260930-224947/fms-runtime.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/nrauf90/fleet-management.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "f2f065d2841e05286587ddf8218a424a56c46e9d"
+    }
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "label": "Staff & Customers",
+      "sublabel": "browser · admin + portal",
+      "pos": [
+        30,
+        240
+      ],
+      "size": [
+        120,
+        64
+      ],
+      "sources": [
+        {
+          "path": "application/config/routes.php",
+          "line": 54,
+          "end_line": 61,
+          "label": "admin + client routes"
+        }
+      ]
+    },
+    {
+      "id": "entry",
+      "type": "backend",
+      "label": "index.php",
+      "sublabel": "front controller · .htaccess",
+      "pos": [
+        240,
+        240
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "index.php",
+          "line": 104,
+          "end_line": 121,
+          "label": "system/app paths"
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "CodeIgniter 3 core",
+      "sublabel": "router · MX module loader",
+      "pos": [
+        470,
+        240
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "application/config/routes.php",
+          "line": 54,
+          "end_line": 72,
+          "label": "route map"
+        },
+        {
+          "path": "application/config/routes.php",
+          "line": 167,
+          "end_line": 171,
+          "label": "MX module routing"
+        }
+      ]
+    },
+    {
+      "id": "controllers",
+      "type": "backend",
+      "label": "Module controllers",
+      "sublabel": "fleet · accounts · hrm · salary",
+      "pos": [
+        710,
+        240
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "sources": [
+        {
+          "path": "modules/fleet/controllers/Fleet.php",
+          "line": 3000,
+          "end_line": 3057,
+          "label": "booking detail"
+        },
+        {
+          "path": "modules/fleet/fleet.php",
+          "line": 33,
+          "end_line": 49,
+          "label": "hook registration"
+        }
+      ]
+    },
+    {
+      "id": "models",
+      "type": "backend",
+      "label": "Models",
+      "sublabel": "fleet_model · cron_model",
+      "pos": [
+        960,
+        240
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "modules/fleet/models/Fleet_model.php",
+          "line": 2200,
+          "end_line": 2211,
+          "label": "add_logbook"
+        },
+        {
+          "path": "application/config/database.php",
+          "line": 89,
+          "end_line": 93,
+          "label": "mysqli driver"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "MariaDB",
+      "sublabel": "mnritsol_fms · localhost",
+      "pos": [
+        1190,
+        240
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "application/config/app-config.php",
+          "line": 41,
+          "end_line": 56,
+          "label": "DB connection"
+        },
+        {
+          "path": "application/config/database.php",
+          "line": 89,
+          "end_line": 93,
+          "label": "mysqli"
+        }
+      ]
+    },
+    {
+      "id": "cron",
+      "type": "backend",
+      "label": "Cron & mail pipe",
+      "sublabel": "Cron.php · pipe.php · Check_emails",
+      "pos": [
+        460,
+        410
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "sources": [
+        {
+          "path": "application/controllers/Cron.php",
+          "line": 7,
+          "end_line": 21,
+          "label": "key-gated run"
+        },
+        {
+          "path": "pipe.php",
+          "line": 3,
+          "end_line": 16,
+          "label": "ticket pipe entry"
+        },
+        {
+          "path": "application/controllers/Check_emails.php",
+          "line": 5,
+          "label": "IMAP poller"
+        }
+      ]
+    },
+    {
+      "id": "filesys",
+      "type": "database",
+      "label": "Local filesystem",
+      "sublabel": "uploads/ · media/ · module files",
+      "pos": [
+        960,
+        410
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "modules/fleet/fleet.php",
+          "line": 23,
+          "label": "module upload dir"
+        }
+      ]
+    },
+    {
+      "id": "mail",
+      "type": "external",
+      "label": "Mail services",
+      "sublabel": "SMTP out · IMAP in",
+      "pos": [
+        680,
+        80
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "application/controllers/Check_emails.php",
+          "line": 5,
+          "label": "IMAP import"
+        },
+        {
+          "path": "pipe.php",
+          "line": 3,
+          "label": "ticket piping"
+        }
+      ]
+    },
+    {
+      "id": "paygw",
+      "type": "external",
+      "label": "Payment gateways",
+      "sublabel": "Stripe · PayPal · Braintree",
+      "pos": [
+        880,
+        80
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "application/libraries/gateways/App_gateway.php",
+          "line": 5,
+          "end_line": 73,
+          "label": "gateway base"
+        },
+        {
+          "path": "application/libraries/gateways/Stripe_gateway.php",
+          "line": 1,
+          "label": "Stripe adapter"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Shared host: fms.mnr-itsolutions.com (cPanel · LiteSpeed)",
+      "wraps": [
+        "entry",
+        "core",
+        "controllers",
+        "models",
+        "cron",
+        "filesys",
+        "db"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "PHP application trust zone",
+      "wraps": [
+        "entry",
+        "core",
+        "controllers",
+        "models",
+        "cron"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-to-entry",
+      "from": "users",
+      "to": "entry",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "entry-to-core",
+      "from": "entry",
+      "to": "core",
+      "label": "bootstrap",
+      "variant": "emphasis"
+    },
+    {
+      "id": "core-to-controllers",
+      "from": "core",
+      "to": "controllers",
+      "label": "route",
+      "variant": "emphasis"
+    },
+    {
+      "id": "controllers-to-models",
+      "from": "controllers",
+      "to": "models",
+      "label": "load model",
+      "variant": "emphasis"
+    },
+    {
+      "id": "models-to-db",
+      "from": "models",
+      "to": "db",
+      "label": "mysqli",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cron-to-core",
+      "from": "cron",
+      "to": "core",
+      "label": "key-gated",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "controllers-to-filesys",
+      "from": "controllers",
+      "to": "filesys",
+      "label": "uploads · PDFs",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "controllers-to-mail",
+      "from": "controllers",
+      "to": "mail",
+      "label": "SMTP / IMAP",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "controllers-to-paygw",
+      "from": "controllers",
+      "to": "paygw",
+      "label": "HTTPS API",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Request path",
+      "items": [
+        "admin/* routes \u00e2\u2020\u2019 application/controllers/admin + module controllers (MX loader)",
+        "Modules self-register menus, permissions and invoice hooks at admin_init",
+        "Tables post AJAX to controller endpoints, e.g. fleet/logbook_table"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Custom modules",
+      "items": [
+        "fleet is the largest custom module: bookings, vehicles, drivers, logbooks",
+        "Also custom: accounts, hrm, salary, goals, surveys",
+        "Each ships its own controllers/models/views/assets under modules/<name>/"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Persistence & state",
+      "items": [
+        "MariaDB mnritsol_fms on localhost via mysqli, utf8mb4",
+        "Sessions stored in the database (SESS_DRIVER=database); CSRF on",
+        "Files land on local disk: uploads/, media/, module upload folders"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Async & mail",
+      "items": [
+        "Cron.php is key-gated and throttled ~5 min, then cron_model runs scheduled work",
+        "pipe.php feeds inbound ticket mail; Check_emails polls IMAP",
+        "fleet hooks after_cron_run to schedule vehicle inspections"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Deployment",
+      "items": [
+        "Prod: shared host fms.mnr-itsolutions.com (LiteSpeed lsapi, cPanel)",
+        "Local: docker-compose Apache + PHP 8.3 on :8090, MariaDB 10.6 on :3307",
+        "Code deployed to the host by SFTP copy, not by pipeline"
+      ]
+    }
+  ]
+}
