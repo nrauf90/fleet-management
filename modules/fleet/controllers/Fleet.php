@@ -4010,6 +4010,39 @@ class Fleet extends AdminController
         return $data;
     }
 
+    /**
+     * Strip thousands separators from cash fields and keep only the set
+     * relevant to the selected vehicle's ownership, so a row never carries
+     * both driver cash and rental totals.
+     * @param  array $data logbook post data
+     * @return array
+     */
+    private function sanitize_logbook_amounts($data)
+    {
+        foreach (['hand_cash', 'used_cash', 'total_cash', 'paid_cash'] as $cash_field) {
+            $data[$cash_field] = isset($data[$cash_field]) && $data[$cash_field] !== ''
+                ? str_replace(',', '', $data[$cash_field])
+                : '0';
+        }
+
+        $vehicle   = isset($data['vehicle_id']) && $data['vehicle_id'] !== ''
+            ? $this->fleet_model->get_vehicle($data['vehicle_id'])
+            : null;
+        $is_rented = $vehicle && isset($vehicle->ownership) && $vehicle->ownership === 'rented';
+
+        if ($is_rented) {
+            $data['hand_cash']      = '0';
+            $data['used_cash']      = '0';
+            $data['paymentmode']    = null;
+            $data['transaction_id'] = null;
+        } else {
+            $data['total_cash'] = '0';
+            $data['paid_cash']  = '0';
+        }
+
+        return $data;
+    }
+
     public function logbook()
     {
         $data = $this->input->post();
@@ -4018,8 +4051,7 @@ class Fleet extends AdminController
             if (!has_permission('fleet_work_performance', '', 'create')) {
                 access_denied('fleet');
             }
-            $data['hand_cash'] = str_replace(",", "", $data['hand_cash']);
-            $data['used_cash'] = str_replace(",", "", $data['used_cash']);
+            $data = $this->sanitize_logbook_amounts($data);
             $data = $this->sanitize_logbook_payment($data);
             $success = $this->fleet_model->add_logbook($data);
             if ($success) {
@@ -4042,8 +4074,7 @@ class Fleet extends AdminController
             }
             $id = $data['id'];
             unset($data['id']);
-            $data['hand_cash'] = str_replace(",", "", $data['hand_cash']);
-            $data['used_cash'] = str_replace(",", "", $data['used_cash']);
+            $data = $this->sanitize_logbook_amounts($data);
             $data = $this->sanitize_logbook_payment($data);
             $success = $this->fleet_model->update_logbook($data, $id);
             if ($success) {

@@ -58,17 +58,23 @@ $arrAtt['data-type'] = 'currency';
 
       <div class="modal-body">
         <?php echo render_select('booking_id', $bookings, array('id', 'number'), 'booking'); ?>
-        <?php echo render_select('vehicle_id', $vehicles, array('id', 'name'), 'vehicle'); ?>
+        <?php echo render_select('vehicle_id', $vehicles, array('id', 'name', 'ownership'), 'vehicle'); ?>
         <?php echo render_select('driver_id', $drivers, array('staffid', array('firstname', 'lastname')), 'driver'); ?>
         <?php echo render_input('name', 'name'); ?>
         <?php echo render_input('odometer', 'odometer'); ?>
         <?php echo render_date_input('date', 'date'); ?>
         <?php echo render_textarea('description', 'description'); ?>
-        <?php echo render_input('hand_cash', 'hand_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
-        <?php echo render_input('used_cash', 'used_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
-        <?php echo render_select('paymentmode', $payment_modes, ['id', 'name'], 'payment_mode'); ?>
-        <div class="logbook-transaction-field" style="display: none;">
-          <?php echo render_input('transaction_id', 'logbook_transaction_id'); ?>
+        <div class="own-vehicle-fields" style="display: none;">
+          <?php echo render_input('hand_cash', 'hand_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
+          <?php echo render_input('used_cash', 'used_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
+          <?php echo render_select('paymentmode', $payment_modes, ['id', 'name'], 'payment_mode'); ?>
+          <div class="logbook-transaction-field" style="display: none;">
+            <?php echo render_input('transaction_id', 'logbook_transaction_id'); ?>
+          </div>
+        </div>
+        <div class="rented-vehicle-fields" style="display: none;">
+          <?php echo render_input('total_cash', 'total_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
+          <?php echo render_input('paid_cash', 'paid_cash', '0.00', 'text', ['data-type' => 'currency']); ?>
         </div>
       </div>
       <div class="modal-footer">

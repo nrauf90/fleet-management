@@ -36,6 +36,17 @@
 
     $(document).on('change', '#logbook-modal select[name="paymentmode"]', fleetToggleTransactionField);
 
+    $(document).on('change', '#logbook-modal select[name="vehicle_id"]', function () {
+      var subtext = $(this).find('option:selected').data('subtext');
+      if (subtext === 'rented') {
+        $('.rented-vehicle-fields').show();
+        $('.own-vehicle-fields').hide();
+      } else {
+        $('.rented-vehicle-fields').hide();
+        $('.own-vehicle-fields').show();
+      }
+    });
+
     appValidateForm($('#logbook-form'), {
       name: 'required',
       booking_id: 'required',
@@ -64,6 +75,8 @@
       $('#logbook-modal textarea[name="description"]').val('');
       $('#logbook-modal input[name="hand_cash"]').val('0.00');
       $('#logbook-modal input[name="used_cash"]').val('0.00');
+      $('#logbook-modal input[name="total_cash"]').val('0.00');
+      $('#logbook-modal input[name="paid_cash"]').val('0.00');
       $('#logbook-modal select[name="paymentmode"]').val('').change();
       $('#logbook-modal input[name="transaction_id"]').val('');
       fleetToggleTransactionField();
@@ -215,6 +228,8 @@
       $('textarea[name="description"]').val(response.description);
       $('input[name="hand_cash"]').val(response.hand_cash);
       $('input[name="used_cash"]').val(response.used_cash);
+      $('#logbook-modal input[name="total_cash"]').val(response.total_cash);
+      $('#logbook-modal input[name="paid_cash"]').val(response.paid_cash);
       $('#logbook-modal select[name="paymentmode"]').val(response.paymentmode || '').change();
       $('#logbook-modal input[name="transaction_id"]').val(response.transaction_id || '');
       fleetToggleTransactionField();
