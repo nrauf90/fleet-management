@@ -133,3 +133,37 @@ if (!$CI->db->field_exists('is_alzarooni', db_prefix() . 'account_transactions')
         ADD KEY `is_alzarooni` (`is_alzarooni`);
     ");
 }
+
+/**
+ * Suppliers: soft-deletable counterparties whose transactions mirror into
+ * account_transactions via source_type = 'supplier'.
+ */
+if (!$CI->db->table_exists(db_prefix() . 'accounts_suppliers')) {
+    $CI->db->query('CREATE TABLE `' . db_prefix() . "accounts_suppliers` (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `name` VARCHAR(191) NOT NULL,
+      `deleted_at` DATETIME NULL DEFAULT NULL,
+      `dateadded` DATETIME NULL DEFAULT NULL,
+      `addedfrom` INT(11) NULL DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `deleted_at` (`deleted_at`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
+}
+
+if (!$CI->db->table_exists(db_prefix() . 'accounts_supplier_transactions')) {
+    $CI->db->query('CREATE TABLE `' . db_prefix() . "accounts_supplier_transactions` (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `supplier_id` INT(11) NOT NULL,
+      `transaction_type` ENUM('credit','debit') NOT NULL,
+      `account` VARCHAR(10) NOT NULL DEFAULT 'cash',
+      `amount` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+      `transaction_date` DATE NOT NULL,
+      `reference` VARCHAR(191) NULL DEFAULT NULL,
+      `note` TEXT NULL,
+      `addedfrom` INT(11) NULL DEFAULT NULL,
+      `datecreated` DATETIME NULL DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `supplier_id` (`supplier_id`),
+      KEY `transaction_date` (`transaction_date`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
+}

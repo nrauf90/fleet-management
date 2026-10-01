@@ -59,6 +59,7 @@
                                     ['id' => 'payment', 'name' => _l('accounts_source_payment')],
                                     ['id' => 'expense', 'name' => _l('accounts_source_expense')],
                                     ['id' => 'logbook', 'name' => _l('accounts_source_logbook')],
+                                    ['id' => 'supplier', 'name' => _l('accounts_supplier')],
                                 ], ['id', 'name'], 'accounts_source');
                                 ?>
                             </div>

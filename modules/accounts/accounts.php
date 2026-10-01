@@ -114,6 +114,14 @@ function accounts_module_init_menu_items()
         'badge'    => [],
     ]);
 
+    $CI->app_menu->add_sidebar_children_item('accounts', [
+        'slug'     => 'accounts_suppliers',
+        'name'     => _l('accounts_suppliers'),
+        'href'     => admin_url('accounts/suppliers'),
+        'position' => 7,
+        'badge'    => [],
+    ]);
+
     if (has_permission('accounts', '', 'settings') || is_admin()) {
         $CI->app_menu->add_sidebar_children_item('accounts', [
             'slug'     => 'accounts_settings',

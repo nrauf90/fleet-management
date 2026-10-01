@@ -91,7 +91,7 @@ class Accounts extends AdminController
         if ($type && in_array($type, ['credit', 'debit'], true)) {
             $where[] = 'AND transaction_type = "' . $this->db->escape_str($type) . '"';
         }
-        if ($source && in_array($source, ['manual', 'payment', 'expense', 'logbook'], true)) {
+        if ($source && in_array($source, ['manual', 'payment', 'expense', 'logbook', 'supplier'], true)) {
             $where[] = 'AND source_type = "' . $this->db->escape_str($source) . '"';
         }
         if ($account === 'alzarooni') {
@@ -387,6 +387,303 @@ class Accounts extends AdminController
 
         $filename = 'account-statement-' . $from . '-to-' . $to . ($account ? '-' . $account : '') . '.pdf';
         $pdf->Output($filename, $type);
+        die();
+    }
+
+    /**
+     * Suppliers list
+     */
+    public function suppliers()
+    {
+        if (!has_permission('accounts', '', 'view') && !is_admin()) {
+            access_denied('accounts');
+        }
+
+        $summary = $this->accounts_model->get_balance_summary();
+        $data['title'] = _l('accounts_suppliers');
+        $data['suppliers'] = $this->accounts_model->get_suppliers_with_totals();
+        $data['base_currency'] = $this->resolve_currency($summary['currency']);
+
+        $this->load->view('suppliers/manage', $data);
+    }
+
+    /**
+     * Add / rename supplier
+     */
+    public function save_supplier()
+    {
+        if (!$this->input->post()) {
+            redirect(admin_url('accounts/suppliers'));
+        }
+
+        $id = $this->input->post('id');
+        $name = $this->input->post('name');
+
+        if ($id) {
+            if (!has_permission('accounts', '', 'edit') && !is_admin()) {
+                access_denied('accounts');
+            }
+            $success = $this->accounts_model->update_supplier($id, $name);
+            set_alert($success ? 'success' : 'danger', $success ? _l('updated_successfully', _l('accounts_supplier')) : _l('accounts_supplier_update_failed'));
+        } else {
+            if (!has_permission('accounts', '', 'create') && !is_admin()) {
+                access_denied('accounts');
+            }
+            $success = $this->accounts_model->add_supplier($name);
+            set_alert($success ? 'success' : 'danger', $success ? _l('added_successfully', _l('accounts_supplier')) : _l('accounts_supplier_add_failed'));
+        }
+
+        redirect(admin_url('accounts/suppliers'));
+    }
+
+    /**
+     * Soft delete supplier
+     */
+    public function delete_supplier($id)
+    {
+        if (!has_permission('accounts', '', 'delete') && !is_admin()) {
+            access_denied('accounts');
+        }
+
+        $success = $this->accounts_model->delete_supplier($id);
+        set_alert($success ? 'success' : 'danger', $success ? _l('deleted', _l('accounts_supplier')) : _l('accounts_supplier_delete_failed'));
+
+        redirect(admin_url('accounts/suppliers'));
+    }
+
+    /**
+     * Supplier detail: transaction history + statement
+     */
+    public function supplier($id)
+    {
+        if (!has_permission('accounts', '', 'view') && !is_admin()) {
+            access_denied('accounts');
+        }
+
+        $supplier = $this->accounts_model->get_supplier($id);
+        if (!$supplier) {
+            show_404();
+        }
+
+        $summary = $this->accounts_model->get_balance_summary();
+        $data['supplier'] = $supplier;
+        $data['is_deleted'] = !empty($supplier->deleted_at);
+        $data['totals'] = $this->accounts_model->get_supplier_totals($id);
+        $data['title'] = $supplier->name;
+        $data['base_currency'] = $this->resolve_currency($summary['currency']);
+
+        $this->load->view('suppliers/detail', $data);
+    }
+
+    /**
+     * Supplier transactions DataTables AJAX
+     */
+    public function supplier_transactions_table($supplier_id)
+    {
+        if (!has_permission('accounts', '', 'view') && !is_admin()) {
+            ajax_access_denied();
+        }
+
+        $supplier = $this->accounts_model->get_supplier($supplier_id);
+        if (!$supplier) {
+            ajax_access_denied();
+        }
+
+        $summary = $this->accounts_model->get_balance_summary();
+        $currency = $this->resolve_currency($summary['currency']);
+
+        $aColumns = [
+            'transaction_date',
+            'transaction_type',
+            'account',
+            'amount',
+            'reference',
+            'note',
+            'addedfrom',
+        ];
+        $sIndexColumn = 'id';
+        $sTable = db_prefix() . 'accounts_supplier_transactions';
+
+        $where = ['AND supplier_id = ' . (int) $supplier_id];
+        $from_date = $this->input->post('from_date');
+        $to_date = $this->input->post('to_date');
+        if ($from_date) {
+            $where[] = 'AND transaction_date >= "' . $this->db->escape_str(to_sql_date($from_date)) . '"';
+        }
+        if ($to_date) {
+            $where[] = 'AND transaction_date <= "' . $this->db->escape_str(to_sql_date($to_date)) . '"';
+        }
+
+        $result = data_tables_init($aColumns, $sIndexColumn, $sTable, [], $where, ['id']);
+        $output = $result['output'];
+        $rResult = $result['rResult'];
+
+        $can_edit = (has_permission('accounts', '', 'edit') || is_admin()) && empty($supplier->deleted_at);
+        $can_delete = has_permission('accounts', '', 'delete') || is_admin();
+
+        foreach ($rResult as $aRow) {
+            $row = [];
+            $row[] = _d($aRow['transaction_date']);
+            $row[] = $aRow['transaction_type'] === 'credit'
+                ? '<span class="label label-success">' . _l('accounts_credit') . '</span>'
+                : '<span class="label label-danger">' . _l('accounts_debit') . '</span>';
+            $row[] = '<span class="label label-default">' . e($aRow['account'] === 'bank' ? _l('accounts_bank') : _l('accounts_cash')) . '</span>';
+            $row[] = app_format_money($aRow['amount'], $currency);
+
+            $note = e($aRow['note']);
+            if ($can_edit || $can_delete) {
+                $opts = '<div class="row-options">';
+                if ($can_edit) {
+                    $opts .= '<a href="#" onclick="edit_supplier_transaction(' . (int) $aRow['id'] . '); return false;">' . _l('edit') . '</a>';
+                }
+                if ($can_delete) {
+                    $opts .= ($can_edit ? ' | ' : '') . '<a href="' . admin_url('accounts/delete_supplier_transaction/' . $aRow['id']) . '?supplier_id=' . (int) $supplier_id . '" class="text-danger _delete">' . _l('delete') . '</a>';
+                }
+                $opts .= '</div>';
+                $note .= $opts;
+            }
+            $row[] = $note;
+
+            $row[] = e($aRow['reference']);
+            $row[] = $aRow['addedfrom'] ? e(get_staff_full_name($aRow['addedfrom'])) : '—';
+
+            $output['aaData'][] = $row;
+        }
+
+        echo json_encode($output);
+        die();
+    }
+
+    /**
+     * Get supplier transaction JSON for edit modal
+     */
+    public function get_supplier_transaction($id)
+    {
+        if (!has_permission('accounts', '', 'view') && !is_admin()) {
+            ajax_access_denied();
+        }
+
+        $tx = $this->accounts_model->get_supplier_transaction($id);
+        if (!$tx) {
+            echo json_encode(['success' => false]);
+            die();
+        }
+
+        echo json_encode([
+            'success'          => true,
+            'id'               => (int) $tx->id,
+            'supplier_id'      => (int) $tx->supplier_id,
+            'transaction_type' => $tx->transaction_type,
+            'account'          => $tx->account,
+            'amount'           => (float) $tx->amount,
+            'transaction_date' => _d($tx->transaction_date),
+            'reference'        => $tx->reference,
+            'note'             => $tx->note,
+        ]);
+        die();
+    }
+
+    /**
+     * Add / update supplier transaction
+     */
+    public function supplier_transaction($supplier_id)
+    {
+        if (!$this->input->post()) {
+            redirect(admin_url('accounts/supplier/' . (int) $supplier_id));
+        }
+
+        $id = $this->input->post('id');
+        $data = $this->input->post();
+
+        if ($id) {
+            if (!has_permission('accounts', '', 'edit') && !is_admin()) {
+                access_denied('accounts');
+            }
+            $success = $this->accounts_model->update_supplier_transaction($id, $data);
+            set_alert($success ? 'success' : 'danger', $success ? _l('updated_successfully', _l('accounts_transaction')) : _l('accounts_transaction_update_failed'));
+        } else {
+            if (!has_permission('accounts', '', 'create') && !is_admin()) {
+                access_denied('accounts');
+            }
+            $success = $this->accounts_model->add_supplier_transaction($supplier_id, $data);
+            set_alert($success ? 'success' : 'danger', $success ? _l('added_successfully', _l('accounts_transaction')) : _l('accounts_transaction_add_failed'));
+        }
+
+        redirect(admin_url('accounts/supplier/' . (int) $supplier_id));
+    }
+
+    /**
+     * Delete supplier transaction (also removes the synced ledger row)
+     */
+    public function delete_supplier_transaction($id)
+    {
+        if (!has_permission('accounts', '', 'delete') && !is_admin()) {
+            access_denied('accounts');
+        }
+
+        $tx = $this->accounts_model->get_supplier_transaction($id);
+        $supplier_id = $tx ? (int) $tx->supplier_id : (int) $this->input->get('supplier_id');
+
+        $success = $this->accounts_model->delete_supplier_transaction($id);
+        set_alert($success ? 'success' : 'danger', $success ? _l('deleted', _l('accounts_transaction')) : _l('accounts_transaction_delete_failed'));
+
+        redirect(admin_url('accounts/supplier/' . $supplier_id));
+    }
+
+    /**
+     * Download a PDF statement for a supplier. ?from=&to= in user date format;
+     * omitting both exports the supplier's full history.
+     */
+    public function supplier_statement($id)
+    {
+        if (!has_permission('accounts', '', 'view') && !is_admin()) {
+            access_denied('accounts');
+        }
+
+        $supplier = $this->accounts_model->get_supplier($id);
+        if (!$supplier) {
+            show_404();
+        }
+
+        try {
+            $from = $this->input->get('from_date') ? to_sql_date($this->input->get('from_date')) : null;
+            $to = $this->input->get('to_date') ? to_sql_date($this->input->get('to_date')) : null;
+        } catch (Throwable $e) {
+            $from = $to = null;
+        }
+
+        if (($from && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from))
+            || ($to && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to))
+            || ($from && $to && $from > $to)) {
+            set_alert('danger', _l('accounts_statement_invalid_range'));
+            redirect(admin_url('accounts/supplier/' . (int) $id));
+        }
+
+        // Full history when no range is given
+        $to = $to ?: date('Y-m-d');
+        $from = $from ?: ($this->accounts_model->get_supplier_first_txn_date($id) ?: $to);
+
+        $statement = $this->accounts_model->get_supplier_statement_data($id, $from, $to);
+        $settings = $this->accounts_model->get_settings();
+        $statement['currency'] = $this->resolve_currency($settings ? (int) $settings->currency : 0);
+
+        try {
+            $pdf = app_pdf(
+                'account_statement',
+                module_dir_path(ACCOUNTS_MODULE_NAME) . 'libraries/Account_statement_pdf',
+                $statement
+            );
+        } catch (Exception $e) {
+            $message = $e->getMessage();
+            echo $message;
+            if (strpos($message, 'Unable to get the size of the image') !== false) {
+                show_pdf_unable_to_get_image_size_error();
+            }
+            die;
+        }
+
+        $type = $this->input->get('print') ? 'I' : 'D';
+        $pdf->Output('supplier-statement-' . $supplier->id . '-' . $from . '-to-' . $to . '.pdf', $type);
         die();
     }
 

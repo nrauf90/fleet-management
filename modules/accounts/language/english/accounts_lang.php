@@ -68,3 +68,14 @@ $lang['accounts_alzarooni'] = 'Al Zarooni';
 $lang['accounts_alzarooni_help'] = 'Logged as Al Zarooni; settled through the selected cash or bank account.';
 $lang['accounts_statement_period'] = 'Statement period: %s to %s';
 $lang['accounts_statement_invalid_range'] = 'Please choose a valid from and to date for the statement.';
+
+$lang['accounts_suppliers'] = 'Suppliers';
+$lang['accounts_supplier'] = 'Supplier';
+$lang['accounts_supplier_name'] = 'Supplier Name';
+$lang['accounts_add_supplier'] = 'Add Supplier';
+$lang['accounts_edit_supplier'] = 'Edit Supplier';
+$lang['accounts_supplier_statement'] = 'Supplier Statement';
+$lang['accounts_supplier_deleted'] = 'Deleted';
+$lang['accounts_supplier_add_failed'] = 'Could not add supplier. A name is required.';
+$lang['accounts_supplier_update_failed'] = 'Could not update supplier.';
+$lang['accounts_supplier_delete_failed'] = 'Could not delete supplier.';

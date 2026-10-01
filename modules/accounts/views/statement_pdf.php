@@ -14,13 +14,16 @@ pdf_multi_row($info_left_column, $info_right_column, $pdf, ($dimensions['wk'] / 
 $pdf->ln(10);
 
 $currency = $statement['currency'];
-$account_label = $statement['account'] === 'cash'
-    ? _l('accounts_cash')
-    : ($statement['account'] === 'bank' ? _l('accounts_bank')
-        : ($statement['account'] === 'alzarooni' ? _l('accounts_alzarooni') : _l('accounts_all_accounts')));
+$supplier_name = !empty($statement['supplier_name']) ? $statement['supplier_name'] : null;
+$account_label = $supplier_name
+    ? $supplier_name
+    : ($statement['account'] === 'cash'
+        ? _l('accounts_cash')
+        : ($statement['account'] === 'bank' ? _l('accounts_bank')
+            : ($statement['account'] === 'alzarooni' ? _l('accounts_alzarooni') : _l('accounts_all_accounts'))));
 
 $summary = '';
-$summary .= '<h2>' . _l('accounts_statement') . '</h2>';
+$summary .= '<h2>' . ($supplier_name ? _l('accounts_supplier_statement') : _l('accounts_statement')) . '</h2>';
 $summary .= '<div style="color:#676767;">' . _l('accounts_statement_period', [
     _d($statement['from']),
     _d($statement['to']),

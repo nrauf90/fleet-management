@@ -292,6 +292,7 @@ function accounts_source_label($source_type)
         'payment' => _l('accounts_source_payment'),
         'expense' => _l('accounts_source_expense'),
         'logbook' => _l('accounts_source_logbook'),
+        'supplier' => _l('accounts_supplier'),
         'opening' => _l('accounts_source_opening'),
     ];
 
