@@ -121,7 +121,7 @@
                                    if ($currency['id'] == $proposal->currency) {
                                        $selected = $currency['id'];
                                    }
-                                   if ($proposal->rel_type == 'customer') {
+                                   if ($proposal->rel_type == 'customer' && !is_admin()) {
                                        $currency_attr['disabled'] = true;
                                    }
                                } else {
@@ -134,7 +134,9 @@
                                                $selected = $currency['id'];
                                            }
                                        }
-                                       $currency_attr['disabled'] = true;
+                                       if (!is_admin()) {
+                                           $currency_attr['disabled'] = true;
+                                       }
                                    } else {
                                        if ($currency['isdefault'] == 1) {
                                            $selected = $currency['id'];

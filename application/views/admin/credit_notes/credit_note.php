@@ -213,7 +213,10 @@
                                         <div class="col-md-6">
                                             <?php
 
-         $credit_note_currency_attr = ['disabled' => true, 'data-show-subtext' => true];
+         $credit_note_currency_attr = ['data-show-subtext' => true];
+         if (!is_admin()) {
+             $credit_note_currency_attr['disabled'] = true;
+         }
          $credit_note_currency_attr = apply_filters_deprecated('credit_note_currency_disabled', [$credit_note_currency_attr], '2.3.0', 'credit_note_currency_attributes');
 
          foreach ($currencies as $currency) {

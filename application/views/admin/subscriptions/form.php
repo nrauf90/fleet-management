@@ -119,7 +119,10 @@
             </div>
         </div>
         <?php
-         $s_attrs = ['disabled' => true, 'data-show-subtext' => true];
+         $s_attrs = ['data-show-subtext' => true];
+         if (!is_admin()) {
+             $s_attrs['disabled'] = true;
+         }
          foreach ($currencies as $currency) {
              if ($currency['isdefault'] == 1) {
                  $s_attrs['data-base'] = $currency['id'];

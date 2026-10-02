@@ -132,7 +132,7 @@
                                 <?php
                      $s_attrs  = ['data-none-selected-text' => _l('system_default_string')];
                      $selected = '';
-                     if (isset($client) && client_have_transactions($client->userid)) {
+                     if (isset($client) && client_have_transactions($client->userid) && !is_admin()) {
                          $s_attrs['disabled'] = true;
                      }
                      foreach ($currencies as $currency) {
