@@ -3281,7 +3281,7 @@ class Fleet extends AdminController
         $this->load->model('currencies_model');
         $currency = $this->currencies_model->get_base_currency();
 
-        $expense = $this->db->get_where(db_prefix() . 'expenses', ['id' => $expense_id])->row();
+        $expense = $this->db->get_where(db_prefix() . 'fleet_booking_expenses', ['id' => $expense_id])->row();
 
         $vehicle_name = '';
         if ($expense && !empty($expense->vehicle_id)) {
@@ -3318,11 +3318,11 @@ class Fleet extends AdminController
             'expense' => [
                 'id' => (int) $expense_id,
                 'date' => $expense ? _d($expense->date) : '',
-                'description' => $expense ? $expense->expense_name : '',
+                'description' => $expense ? $expense->name : '',
                 'vehicle_name' => $vehicle_name,
                 'amount' => $expense ? (float) $expense->amount : 0,
                 'amount_formatted' => $expense ? app_format_money($expense->amount, $currency->name) : '',
-                'delete_url' => admin_url('fleet/delete_booking_expense/' . $expense_id),
+                'delete_url' => admin_url('fleet/delete_booking_expense/' . $expense_id . '/fleet'),
                 'can_delete' => has_permission('fleet_bookings', '', 'delete'),
             ],
             'total_formatted' => app_format_money($total_expenses, $currency->name),
@@ -3334,13 +3334,30 @@ class Fleet extends AdminController
     }
 
     /**
-     * delete a booking expense (linked through _delete GET link)
-     * @param  integer $id the expense id
+     * delete a booking expense (linked through _delete GET link).
+     * origin 'fleet' => fleet_booking_expenses; origin 'expense' => legacy
+     * tblexpenses row (its synced account transaction is removed by the hook).
+     * @param  integer $id     the expense id
+     * @param  string  $origin fleet|expense
      */
-    public function delete_booking_expense($id)
+    public function delete_booking_expense($id, $origin = 'expense')
     {
         if (!has_permission('fleet_bookings', '', 'delete')) {
             access_denied('fleet_bookings');
+        }
+
+        if ($origin === 'fleet') {
+            $row = $this->db->get_where(db_prefix() . 'fleet_booking_expenses', ['id' => $id])->row();
+
+            if ($row) {
+                $this->db->where('id', (int) $id);
+                $this->db->delete(db_prefix() . 'fleet_booking_expenses');
+                set_alert('success', _l('deleted', _l('expense')));
+            } else {
+                set_alert('danger', _l('problem_deleting', _l('expense')));
+            }
+
+            redirect(admin_url($row ? 'fleet/booking_detail/' . $row->booking_id : 'fleet/bookings'));
         }
 
         $this->load->model('expenses_model');

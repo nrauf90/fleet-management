@@ -740,23 +740,46 @@ class Fleet_model extends App_Model
     }
 
     /**
-     * get expenses linked to a booking (reference_no = booking number)
+     * get expenses linked to a booking.
+     * New rows live in fleet_booking_expenses; rows created earlier via
+     * tblexpenses (reference_no = booking number, from_fleet = 1) are still
+     * returned with origin 'expense' until they are migrated/removed.
      * @param  object $booking
      * @return array
      */
     public function get_booking_expenses($booking)
     {
-        if (!$booking || empty($booking->number)) {
+        if (!$booking || empty($booking->id)) {
             return [];
         }
 
-        $this->db->select(db_prefix() . 'expenses.*, ' . db_prefix() . 'fleet_vehicles.name as vehicle_name');
-        $this->db->join(db_prefix() . 'fleet_vehicles', db_prefix() . 'fleet_vehicles.id = ' . db_prefix() . 'expenses.vehicle_id', 'left');
-        $this->db->where(db_prefix() . 'expenses.reference_no', $booking->number);
-        $this->db->where(db_prefix() . 'expenses.from_fleet', 1);
-        $this->db->order_by(db_prefix() . 'expenses.date', 'desc');
+        $rows = [];
 
-        return $this->db->get(db_prefix() . 'expenses')->result_array();
+        $this->db->select('be.*, ' . db_prefix() . 'fleet_vehicles.name as vehicle_name, be.name as expense_name', false);
+        $this->db->from(db_prefix() . 'fleet_booking_expenses be');
+        $this->db->join(db_prefix() . 'fleet_vehicles', db_prefix() . 'fleet_vehicles.id = be.vehicle_id', 'left');
+        $this->db->where('be.booking_id', (int) $booking->id);
+        foreach ($this->db->get()->result_array() as $row) {
+            $row['origin'] = 'fleet';
+            $rows[] = $row;
+        }
+
+        if (!empty($booking->number)) {
+            $this->db->select(db_prefix() . 'expenses.*, ' . db_prefix() . 'fleet_vehicles.name as vehicle_name');
+            $this->db->join(db_prefix() . 'fleet_vehicles', db_prefix() . 'fleet_vehicles.id = ' . db_prefix() . 'expenses.vehicle_id', 'left');
+            $this->db->where(db_prefix() . 'expenses.reference_no', $booking->number);
+            $this->db->where(db_prefix() . 'expenses.from_fleet', 1);
+            foreach ($this->db->get(db_prefix() . 'expenses')->result_array() as $row) {
+                $row['origin'] = 'expense';
+                $rows[] = $row;
+            }
+        }
+
+        usort($rows, function ($a, $b) {
+            return strcmp($b['date'], $a['date']);
+        });
+
+        return $rows;
     }
 
     /**
@@ -790,11 +813,12 @@ class Fleet_model extends App_Model
     }
 
     /**
-     * add a booking expense row to tblexpenses (after_expense_added fires for accounts sync)
+     * add a booking expense row to fleet_booking_expenses (kept out of
+     * tblexpenses so it never reaches the expense list or account ledger);
      * when the source is a fuel route and a vehicle is set, also logs fleet_fuel_history
      * @param  object $booking the booking row
      * @param  array  $data    keys: source, vehicle_id, amount, date, note
-     * @return integer|boolean expense id or false
+     * @return integer|boolean booking expense id or false
      */
     public function add_booking_expense($booking, $data)
     {
@@ -831,21 +855,20 @@ class Fleet_model extends App_Model
             return false;
         }
 
-        $this->load->model('expenses_model');
-        $this->load->model('currencies_model');
-        $base_currency = $this->currencies_model->get_base_currency();
-
-        $expense_id = $this->expenses_model->add([
-            'expense_name' => $expense_name,
-            'category' => $this->get_booking_expense_category_id(),
-            'amount' => $amount,
-            'date' => $date,
-            'note' => $note,
-            'reference_no' => $booking->number,
-            'vehicle_id' => $vehicle_id > 0 ? $vehicle_id : null,
-            'currency' => $base_currency->id,
-            'from_fleet' => 1,
+        // Booking expenses stay inside the fleet module — no tblexpenses row,
+        // so nothing reaches the expense list or the account ledger.
+        $this->db->insert(db_prefix() . 'fleet_booking_expenses', [
+            'booking_id'  => (int) $booking->id,
+            'vehicle_id'  => $vehicle_id > 0 ? $vehicle_id : null,
+            'source'      => $source,
+            'name'        => $expense_name,
+            'amount'      => $amount,
+            'date'        => $date,
+            'note'        => $note,
+            'addedfrom'   => get_staff_user_id() ?: null,
+            'datecreated' => date('Y-m-d H:i:s'),
         ]);
+        $expense_id = $this->db->insert_id();
 
         if ($expense_id && $fuel_route) {
             $this->add_fuel_history([

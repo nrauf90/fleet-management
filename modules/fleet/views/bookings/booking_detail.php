@@ -569,7 +569,7 @@ $can_view_invoice = has_permission('invoices', '', 'view');
                         </td>
                         <td>
                           <?php if (has_permission('fleet_bookings', '', 'delete')) { ?>
-                            <a href="<?php echo admin_url('fleet/delete_booking_expense/' . $booking_expense['id']); ?>"
+                            <a href="<?php echo admin_url('fleet/delete_booking_expense/' . $booking_expense['id'] . '/' . (isset($booking_expense['origin']) ? $booking_expense['origin'] : 'expense')); ?>"
                               class="btn btn-danger btn-icon _delete"><i class="fa fa-remove"></i></a>
                           <?php } ?>
                         </td>

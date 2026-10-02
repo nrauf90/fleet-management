@@ -834,3 +834,22 @@ if (!$CI->db->table_exists(db_prefix() . 'fleet_fuel_routes')) {
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
 }
+
+// Booking expenses detached from tblexpenses / account ledger
+if (!$CI->db->table_exists(db_prefix() . 'fleet_booking_expenses')) {
+    $CI->db->query('CREATE TABLE ' . db_prefix() . "fleet_booking_expenses (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `booking_id` INT(11) NOT NULL,
+      `vehicle_id` INT(11) NULL DEFAULT NULL,
+      `source` VARCHAR(50) NULL DEFAULT NULL,
+      `name` VARCHAR(191) NOT NULL,
+      `amount` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+      `date` DATE NOT NULL,
+      `note` TEXT NULL,
+      `addedfrom` INT(11) NULL,
+      `datecreated` DATETIME NULL,
+      PRIMARY KEY (`id`),
+      KEY `booking_id` (`booking_id`),
+      KEY `vehicle_id` (`vehicle_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=" . $CI->db->char_set . ';');
+}
